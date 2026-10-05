@@ -1,0 +1,108 @@
+[project]
+name = "invoice-to-pay"
+version = "0.1.0"
+description = "Invoice-to-Pay agent for Meridian Supply"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# Dependencies come from the Stack sheet and are added by the task that first needs them.
+dependencies = [
+    "fastapi[standard]>=0.115",
+    "pydantic>=2,<3",
+    "pydantic-settings>=2,<3",
+]
+
+[dependency-groups]
+dev = [
+    "import-linter>=2",
+    "mypy",
+    "pytest>=8,<9",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["invoice_to_pay"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# Generated from the workbook; never hand-edited or reformatted.
+extend-exclude = ["CLAUDE.md", "tasks", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "S", "T20", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# C-02: strict on domain, contracts, control and application layers.
+[[tool.mypy.overrides]]
+module = [
+    "invoice_to_pay.domain.*",
+    "invoice_to_pay.contracts.*",
+    "invoice_to_pay.control.*",
+    "invoice_to_pay.application.*",
+    "invoice_to_pay.config.*",
+]
+strict = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra"
+
+# Framework Rules sheet, enforced by `lint-imports` (D-05).
+# Each contract lists the modules a framework may NOT be imported from.
+# Add a framework's contract in the task that adds the framework to the Stack.
+[tool.importlinter]
+root_package = "invoice_to_pay"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain imports no framework (C-01)"
+type = "forbidden"
+source_modules = ["invoice_to_pay.domain"]
+forbidden_modules = ["fastapi", "starlette", "pydantic_settings"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "FastAPI only in api/ and main.py"
+type = "forbidden"
+source_modules = [
+    "invoice_to_pay.config",
+    "invoice_to_pay.contracts",
+    "invoice_to_pay.control",
+    "invoice_to_pay.domain",
+    "invoice_to_pay.application",
+]
+forbidden_modules = ["fastapi", "starlette"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: api -> application -> control -> domain -> contracts"
+type = "layers"
+layers = [
+    "invoice_to_pay.main",
+    "invoice_to_pay.api",
+    "invoice_to_pay.application",
+    "invoice_to_pay.control",
+    "invoice_to_pay.domain",
+    "invoice_to_pay.contracts",
+]
