@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from invoice_to_pay.api.errors import domain_error_handler
 from invoice_to_pay.config.settings import get_settings
@@ -15,22 +16,26 @@ health_router = APIRouter()
 @health_router.get("/health")
 async def health() -> dict[str, str]:
     """Liveness probe."""
-    # TODO(T-104): return 503 when the database is unreachable.
-    # TODO(T-108): return 503 when Redis is unreachable.
+    # TODO: return 503 when the database or Redis is unreachable; no task in the workbook owns
+    # readiness checks yet.
     return {"status": "ok"}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Open DB pool, Redis, MCP sessions, checkpointer; close on shutdown."""
-    app.state.settings = get_settings()
-    # TODO(T-104): open the async SQLAlchemy engine.
+    settings = get_settings()
+    app.state.settings = settings
+    engine = create_async_engine(str(settings.database_url), pool_pre_ping=True)
+    app.state.db_sessions = async_sessionmaker(engine, expire_on_commit=False)
     # TODO(T-108): open the Redis pool.
     # TODO(T-202): open the ERP MCP client session.
     # TODO(T-213): set up the LangGraph AsyncPostgresSaver checkpointer.
     try:
         yield
     finally:
+        await engine.dispose()
+        del app.state.db_sessions
         del app.state.settings
 
 

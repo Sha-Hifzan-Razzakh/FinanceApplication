@@ -40,11 +40,20 @@ def test_cs004_lifespan_puts_settings_on_app_state(settings_env: dict[str, str])
         assert isinstance(app.state.settings, Settings)
 
 
+def test_cs004_lifespan_opens_a_session_factory(settings_env: dict[str, str]) -> None:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    app = create_app()
+    with TestClient(app):
+        assert isinstance(app.state.db_sessions, async_sessionmaker)
+
+
 def test_cs004_lifespan_releases_state_on_shutdown(settings_env: dict[str, str]) -> None:
     app = create_app()
     with TestClient(app):
         pass
     assert not hasattr(app.state, "settings")
+    assert not hasattr(app.state, "db_sessions")
 
 
 def test_cs003_module_exposes_lazy_app_for_fastapi_cli(settings_env: dict[str, str]) -> None:
