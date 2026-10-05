@@ -1,0 +1,57 @@
+"""FastAPI entry point: app factory and lifespan."""
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import APIRouter, FastAPI
+
+from invoice_to_pay.api.errors import domain_error_handler
+from invoice_to_pay.config.settings import get_settings
+from invoice_to_pay.control.errors import DomainError
+
+health_router = APIRouter()
+
+
+@health_router.get("/health")
+async def health() -> dict[str, str]:
+    """Liveness probe."""
+    # TODO(T-104): return 503 when the database is unreachable.
+    # TODO(T-108): return 503 when Redis is unreachable.
+    return {"status": "ok"}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Open DB pool, Redis, MCP sessions, checkpointer; close on shutdown."""
+    app.state.settings = get_settings()
+    # TODO(T-104): open the async SQLAlchemy engine.
+    # TODO(T-108): open the Redis pool.
+    # TODO(T-202): open the ERP MCP client session.
+    # TODO(T-213): set up the LangGraph AsyncPostgresSaver checkpointer.
+    try:
+        yield
+    finally:
+        del app.state.settings
+
+
+def create_app() -> FastAPI:
+    """App factory: routers, middleware, exception handlers."""
+    get_settings()  # fail at startup when a required setting is missing
+    app = FastAPI(title="Invoice-to-Pay", lifespan=lifespan)
+    app.add_exception_handler(DomainError, domain_error_handler)  # type: ignore[arg-type]
+    app.include_router(health_router)
+    # TODO(T-105): tracing middleware.
+    # TODO(T-107): include the intake router.
+    return app
+
+
+def __getattr__(name: str) -> FastAPI:
+    """Build `app` on first access so `fastapi dev invoice_to_pay/main.py` finds it lazily."""
+    if name == "app":
+        return create_app()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    """Expose the lazy `app` to fastapi-cli discovery."""
+    return [*globals(), "app"]
