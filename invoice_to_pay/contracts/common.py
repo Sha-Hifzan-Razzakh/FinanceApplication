@@ -1,5 +1,7 @@
 """Contracts shared across the program."""
 
+import os
+import time
 from datetime import datetime
 from typing import Generic, Literal, Self, TypeVar
 from uuid import UUID
@@ -10,6 +12,24 @@ T = TypeVar("T")
 
 EntityId = Literal["meridian-supply", "meridian-projects"]
 """One definition of the legal entities."""
+
+_last_ms = 0
+_counter = 0
+
+
+def uuid7() -> UUID:
+    """UUIDv7 (RFC 9562) for internal ids (C-05): ms timestamp, sub-ms counter, random tail."""
+    global _last_ms, _counter
+    ms = time.time_ns() // 1_000_000
+    if ms > _last_ms:
+        _last_ms, _counter = ms, int.from_bytes(os.urandom(2)) & 0x7FF
+    else:
+        _counter += 1
+        if _counter > 0xFFF:
+            _last_ms, _counter = _last_ms + 1, 0
+    rand_b = int.from_bytes(os.urandom(8)) & ((1 << 62) - 1)
+    value = (_last_ms << 80) | (0x7 << 76) | (_counter << 64) | (0b10 << 62) | rand_b
+    return UUID(int=value)
 
 
 class Quote(BaseModel):

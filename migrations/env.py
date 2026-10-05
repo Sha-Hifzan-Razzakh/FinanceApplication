@@ -8,13 +8,14 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from invoice_to_pay.control.ledger import metadata
+from invoice_to_pay.adapters.sql_file_records import metadata as file_records_metadata
+from invoice_to_pay.control.ledger import metadata as ledger_metadata
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-target_metadata = metadata
+target_metadata = [ledger_metadata, file_records_metadata]
 
 
 def _url() -> str:
