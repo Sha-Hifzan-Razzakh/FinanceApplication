@@ -36,7 +36,7 @@ async def test_cs012_append_persists_a_linked_chain(sessions: async_sessionmaker
 
 
 async def test_cs012_runs_have_independent_chains(sessions: async_sessionmaker) -> None:  # type: ignore[type-arg]
-    ledger = RunLedger(sessions)
+    ledger = RunLedger(sessions, trace_id=lambda: "")
     a, b = uuid4(), uuid4()
     await ledger.append(a, "decision", {})
     first_b = await ledger.append(b, "decision", {})
@@ -45,7 +45,7 @@ async def test_cs012_runs_have_independent_chains(sessions: async_sessionmaker) 
 
 
 async def test_cs012_concurrent_appends_keep_one_chain(sessions: async_sessionmaker) -> None:  # type: ignore[type-arg]
-    ledger = RunLedger(sessions)
+    ledger = RunLedger(sessions, trace_id=lambda: "")
     run_id = uuid4()
     entries = await asyncio.gather(*(ledger.append(run_id, "action", {"n": i}) for i in range(10)))
     assert sorted(e.seq for e in entries) == list(range(1, 11))
@@ -53,7 +53,7 @@ async def test_cs012_concurrent_appends_keep_one_chain(sessions: async_sessionma
 
 
 async def test_cs013_untouched_chain_verifies(sessions: async_sessionmaker) -> None:  # type: ignore[type-arg]
-    ledger = RunLedger(sessions)
+    ledger = RunLedger(sessions, trace_id=lambda: "")
     run_id = uuid4()
     await _append_five(ledger, run_id)
     assert await ledger.verify_chain(run_id) is True
@@ -91,7 +91,7 @@ async def test_cs013_editing_any_row_fails_verification(
     sessions: async_sessionmaker,  # type: ignore[type-arg]
     sql: str,
 ) -> None:
-    ledger = RunLedger(sessions)
+    ledger = RunLedger(sessions, trace_id=lambda: "")
     run_id = uuid4()
     await _append_five(ledger, run_id)
     await _tamper(engine, sql, run_id)
@@ -111,7 +111,7 @@ async def test_run_ledger_table_is_append_only(
     sql: str,
 ) -> None:
     run_id = uuid4()
-    await RunLedger(sessions).append(run_id, "decision", {})
+    await RunLedger(sessions, trace_id=lambda: "").append(run_id, "decision", {})
     with pytest.raises(DBAPIError, match="append-only"):
         async with engine.begin() as conn:
             await conn.execute(text(sql), {"run_id": run_id})

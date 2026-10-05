@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import jwt
 import pytest
@@ -10,6 +10,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from invoice_to_pay.config.settings import get_settings
+
+if TYPE_CHECKING:
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 IDP_ISSUER = "https://idp.test.example"
 IDP_AUDIENCE = "invoice-to-pay"
@@ -84,3 +87,25 @@ def make_token() -> TokenFactory:
         return jwt.encode(claims, signing_key, algorithm="RS256")
 
     return _make
+
+
+@pytest.fixture(scope="session")
+def span_exporter() -> "InMemorySpanExporter":
+    """Install tracing once for the session and record every finished span in memory."""
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from invoice_to_pay.config.settings import Settings
+    from invoice_to_pay.observability.tracing import setup_tracing
+
+    settings = Settings(**{k.removeprefix("ITP_").lower(): v for k, v in REQUIRED_ENV.items()})
+    exporter = InMemorySpanExporter()
+    setup_tracing(settings).add_span_processor(SimpleSpanProcessor(exporter))
+    return exporter
+
+
+@pytest.fixture
+def spans(span_exporter: "InMemorySpanExporter") -> "InMemorySpanExporter":
+    """The session span recorder, emptied before the test."""
+    span_exporter.clear()
+    return span_exporter

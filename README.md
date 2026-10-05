@@ -23,5 +23,5 @@ make dev                  # http://localhost:8000/health
 
 | Increment | Goal | State |
 |---|---|---|
-| INC-1 Walking skeleton | Upload a PDF, get a typed invoice, with ledger and trace | T-101 done; T-102 – T-104 in review |
+| INC-1 Walking skeleton | Upload a PDF, get a typed invoice, with ledger and trace | T-101 done; T-102 – T-105 in review |
 | INC-2 … INC-6 | See the Increments sheet | Not started |
