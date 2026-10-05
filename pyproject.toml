@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 # Dependencies come from the Stack sheet and are added by the task that first needs them.
 dependencies = [
+    "aioboto3>=15.5.0",
     "alembic>=1.20.0",
     "asyncpg>=0.31.0",
     "fastapi[standard]>=0.115",
@@ -15,6 +16,7 @@ dependencies = [
     "pydantic>=2,<3",
     "pydantic-settings>=2,<3",
     "pyjwt[crypto]>=2.8",
+    "python-magic>=0.4.27",
     "sqlalchemy[asyncio]>=2,<3",
     "structlog>=26.1.0",
 ]
@@ -65,6 +67,11 @@ module = [
     "invoice_to_pay.config.*",
 ]
 strict = true
+
+# Untyped third-party packages used only inside their adapter or service.
+[[tool.mypy.overrides]]
+module = ["aioboto3", "botocore.*", "magic"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -142,4 +149,30 @@ source_modules = [
     "invoice_to_pay.domain",
 ]
 forbidden_modules = ["opentelemetry"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Application, domain and contracts import no persistence or storage SDK"
+type = "forbidden"
+source_modules = [
+    "invoice_to_pay.application",
+    "invoice_to_pay.files",
+    "invoice_to_pay.domain",
+    "invoice_to_pay.contracts",
+]
+forbidden_modules = ["sqlalchemy", "aioboto3", "botocore"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "aioboto3 only in adapters/s3_storage.py"
+type = "forbidden"
+source_modules = [
+    "invoice_to_pay.main",
+    "invoice_to_pay.api",
+    "invoice_to_pay.config",
+    "invoice_to_pay.control",
+    "invoice_to_pay.observability",
+    "invoice_to_pay.adapters.sql_file_records",
+]
+forbidden_modules = ["aioboto3", "botocore"]
 allow_indirect_imports = true

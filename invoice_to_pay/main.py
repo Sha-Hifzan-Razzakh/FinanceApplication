@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     engine = create_async_engine(str(settings.database_url), pool_pre_ping=True)
     app.state.db_sessions = async_sessionmaker(engine, expire_on_commit=False)
+    # TODO(T-107): build FileService(S3Storage, SqlFileRecordStore, publisher) for the upload route.
     # TODO(T-108): open the Redis pool.
     # TODO(T-202): open the ERP MCP client session.
     # TODO(T-213): set up the LangGraph AsyncPostgresSaver checkpointer.
