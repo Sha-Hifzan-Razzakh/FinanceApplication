@@ -6,10 +6,13 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 # Dependencies come from the Stack sheet and are added by the task that first needs them.
 dependencies = [
+    "alembic>=1.20.0",
+    "asyncpg>=0.31.0",
     "fastapi[standard]>=0.115",
     "pydantic>=2,<3",
     "pydantic-settings>=2,<3",
     "pyjwt[crypto]>=2.8",
+    "sqlalchemy[asyncio]>=2,<3",
 ]
 
 [dependency-groups]
