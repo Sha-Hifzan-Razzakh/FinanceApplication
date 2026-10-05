@@ -4,11 +4,13 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from invoice_to_pay.api.errors import domain_error_handler
 from invoice_to_pay.config.settings import get_settings
 from invoice_to_pay.control.errors import DomainError
+from invoice_to_pay.observability.tracing import setup_logging, setup_tracing
 
 health_router = APIRouter()
 
@@ -41,11 +43,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     """App factory: routers, middleware, exception handlers."""
-    get_settings()  # fail at startup when a required setting is missing
+    settings = get_settings()  # fail at startup when a required setting is missing
+    setup_logging()
+    provider = setup_tracing(settings)
     app = FastAPI(title="Invoice-to-Pay", lifespan=lifespan)
     app.add_exception_handler(DomainError, domain_error_handler)  # type: ignore[arg-type]
     app.include_router(health_router)
-    # TODO(T-105): tracing middleware.
+    FastAPIInstrumentor.instrument_app(app, tracer_provider=provider)
     # TODO(T-107): include the intake router.
     return app
 

@@ -107,17 +107,17 @@ def verify_entries(entries: Sequence[LedgerEntry]) -> bool:
     return True
 
 
-def _no_trace() -> str:
-    return ""
-
-
 class RunLedger:
-    """Append-only hash-chained ledger per run."""
+    """Append-only hash-chained ledger per run.
+
+    trace_id supplies the active trace id for each entry; pass
+    observability.tracing.current_trace_id (control/ may not import OpenTelemetry).
+    """
 
     def __init__(
         self,
         sessions: async_sessionmaker[AsyncSession],
-        trace_id: Callable[[], str] = _no_trace,  # TODO(T-105): current OpenTelemetry trace id
+        trace_id: Callable[[], str],
     ) -> None:
         self._sessions = sessions
         self._trace_id = trace_id
