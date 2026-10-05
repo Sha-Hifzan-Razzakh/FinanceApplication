@@ -9,6 +9,7 @@ dependencies = [
     "fastapi[standard]>=0.115",
     "pydantic>=2,<3",
     "pydantic-settings>=2,<3",
+    "pyjwt[crypto]>=2.8",
 ]
 
 [dependency-groups]
@@ -106,3 +107,18 @@ layers = [
     "invoice_to_pay.domain",
     "invoice_to_pay.contracts",
 ]
+
+[[tool.importlinter.contracts]]
+name = "PyJWT only in api/deps.py"
+type = "forbidden"
+source_modules = [
+    "invoice_to_pay.main",
+    "invoice_to_pay.api.errors",
+    "invoice_to_pay.config",
+    "invoice_to_pay.contracts",
+    "invoice_to_pay.control",
+    "invoice_to_pay.domain",
+    "invoice_to_pay.application",
+]
+forbidden_modules = ["jwt"]
+allow_indirect_imports = true

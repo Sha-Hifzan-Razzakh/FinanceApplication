@@ -1,10 +1,40 @@
 """Shared fixtures: a complete ITP_ environment with fictitious, local-only values."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
+import jwt
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from invoice_to_pay.config.settings import get_settings
+
+IDP_ISSUER = "https://idp.test.example"
+IDP_AUDIENCE = "invoice-to-pay"
+
+TokenFactory = Callable[..., str]
+
+
+def _rsa_key_pair() -> tuple[str, str]:
+    """Throwaway RSA key pair (private PEM, public PEM) for signing test tokens."""
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ).decode()
+    public_pem = (
+        key.public_key()
+        .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+        .decode()
+    )
+    return private_pem, public_pem
+
+
+SIGNING_KEY, PUBLIC_KEY = _rsa_key_pair()
+OTHER_SIGNING_KEY, _ = _rsa_key_pair()
 
 REQUIRED_ENV: dict[str, str] = {
     "ITP_DATABASE_URL": "postgresql+asyncpg://itp:itp@localhost:5432/itp",
@@ -17,6 +47,9 @@ REQUIRED_ENV: dict[str, str] = {
     "ITP_LLM_REASON_MODEL": "test-reason-model",
     "ITP_JEV_MODEL": "jev-test-2026-01",
     "ITP_EMBEDDING_MODEL": "test-embedding-model",
+    "ITP_AUTH_ISSUER": IDP_ISSUER,
+    "ITP_AUTH_AUDIENCE": IDP_AUDIENCE,
+    "ITP_AUTH_PUBLIC_KEY": PUBLIC_KEY,
 }
 
 
@@ -28,3 +61,26 @@ def settings_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[dict[str, str]]:
     get_settings.cache_clear()
     yield dict(REQUIRED_ENV)
     get_settings.cache_clear()
+
+
+@pytest.fixture
+def make_token() -> TokenFactory:
+    """Mint an RS256 test token; keyword overrides replace or (with None) drop claims."""
+
+    def _make(*, signing_key: str = SIGNING_KEY, **overrides: Any) -> str:
+        now = datetime.now(UTC)
+        claims: dict[str, Any] = {
+            "iss": IDP_ISSUER,
+            "aud": IDP_AUDIENCE,
+            "sub": "u-clerk-1",
+            "entity": "meridian-supply",
+            "roles": ["ap_clerk"],
+            "scope": "erp.read",
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+        }
+        claims.update(overrides)
+        claims = {k: v for k, v in claims.items() if v is not None}
+        return jwt.encode(claims, signing_key, algorithm="RS256")
+
+    return _make
