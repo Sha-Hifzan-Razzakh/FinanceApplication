@@ -42,7 +42,7 @@ async def upload(file: UploadFile, p: CallerDep, files: FilesDep) -> UploadRespo
             detail="Only PDF, PNG, JPEG or TIFF files are accepted",
         )
     record, duplicate = await files.put(data, UploadMeta(channel="scan"), p)
-    # TODO(T-108): run_id stays None; the intake job starts the run from InvoiceReceived.
+    # run_id stays None: the intake worker starts the run asynchronously from InvoiceReceived.
     return UploadResponse(file_id=record.id, duplicate=duplicate)
 
 

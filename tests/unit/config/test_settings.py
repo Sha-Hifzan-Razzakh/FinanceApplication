@@ -108,3 +108,11 @@ def test_cs001_auth_settings_are_required(
     monkeypatch.delenv(missing)
     with pytest.raises(ValidationError):
         Settings()  # type: ignore[call-arg]
+
+
+def test_cs001_agent_subject_default_and_override(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert Settings().agent_subject == "agent:invoice-to-pay"  # type: ignore[call-arg]
+    monkeypatch.setenv("ITP_AGENT_SUBJECT", "agent:staging")
+    assert Settings().agent_subject == "agent:staging"  # type: ignore[call-arg]

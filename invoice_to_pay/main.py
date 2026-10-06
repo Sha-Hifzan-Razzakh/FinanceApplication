@@ -3,17 +3,16 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-import structlog
 from fastapi import APIRouter, FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from invoice_to_pay.adapters.arq_events import ArqEventPublisher
 from invoice_to_pay.adapters.s3_storage import S3Storage
 from invoice_to_pay.adapters.sql_file_records import SqlFileRecordStore
 from invoice_to_pay.api.errors import domain_error_handler
 from invoice_to_pay.api.routers import intake
 from invoice_to_pay.config.settings import get_settings
-from invoice_to_pay.contracts.events import InvoiceReceived
 from invoice_to_pay.control.errors import DomainError
 from invoice_to_pay.files.service import FileService
 from invoice_to_pay.observability.tracing import setup_logging, setup_tracing
@@ -29,14 +28,6 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-class _LogOnlyPublisher:
-    """Logs InvoiceReceived until the job queue exists."""
-
-    # TODO(T-108): replace with the Arq-backed EventPublisher.
-    async def publish(self, event: InvoiceReceived) -> None:
-        structlog.get_logger().info("invoice_received", **event.model_dump(mode="json"))
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Open DB pool, Redis, MCP sessions, checkpointer; close on shutdown."""
@@ -44,17 +35,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     engine = create_async_engine(str(settings.database_url), pool_pre_ping=True)
     app.state.db_sessions = async_sessionmaker(engine, expire_on_commit=False)
+    publisher = ArqEventPublisher(str(settings.redis_url))
     app.state.file_service = FileService(
         storage=S3Storage(bucket=settings.object_bucket),
         records=SqlFileRecordStore(app.state.db_sessions),
-        events=_LogOnlyPublisher(),
+        events=publisher,
     )
-    # TODO(T-108): open the Redis pool.
     # TODO(T-202): open the ERP MCP client session.
     # TODO(T-213): set up the LangGraph AsyncPostgresSaver checkpointer.
     try:
         yield
     finally:
+        await publisher.close()
         await engine.dispose()
         del app.state.file_service
         del app.state.db_sessions
