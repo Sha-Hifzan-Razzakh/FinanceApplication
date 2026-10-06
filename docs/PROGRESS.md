@@ -3,9 +3,9 @@
 Edited only by `python3 scripts/progress.py` (start · done · block · archive). Do not read or rewrite by hand.
 
 ## Current focus
-- Group: G-04
-- Branch: g04-extraction
-- Since: 2026-10-06
+- Group: none
+- Branch: —
+- Since: —
 
 ## INC-1 · Walking skeleton
 | Task | Title | Group | Depends on | Status | Branch / PR | Updated | Notes |
@@ -22,7 +22,7 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 | T-110 | PDF reading | G-03 | T-106 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
 | T-111 | Invoice extraction | G-04 | T-110, T-112 | done | g04-extraction | 2026-10-06 |  |
 | T-112 | Invoice contracts and validators | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
-| T-113 | Extraction test set | G-04 | T-111 | in progress | g04-extraction | 2026-10-06 |  |
+| T-113 | Extraction test set | G-04 | T-111 | done | g04-extraction | 2026-10-06 |  |
 
 ## INC-2 · Clean invoices post themselves
 | Task | Title | Group | Depends on | Status | Branch / PR | Updated | Notes |
@@ -124,3 +124,6 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 ### T-111 · Invoice extraction · done 2026-10-06
 - Evidence: tests/unit/application/test_extract_invoice.py::test_invalid_totals_trigger_exactly_one_re_extraction and ::test_two_invalid_drafts_are_held_after_exactly_two_model_calls; TS-02 in tests/unit/contracts/test_invoice.py; make lint typecheck test-unit green (348)
 - Tests: TS-02
+### T-113 · Extraction test set · done 2026-10-06
+- Evidence: tests/unit/evals: scorer fails on a wrong subtotal, vat, total, line amount or missing line; 20 PDFs print every labelled amount; live eval evals/deepeval/test_extraction.py collected and errors without keys, NOT run against a real model (DEBT-016)
+- Tests: TS-34
