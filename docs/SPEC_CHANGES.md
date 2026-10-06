@@ -57,3 +57,9 @@ Append before `make docs`. Format: `### SC-NNN — YYYY-MM-DD` then bullets What
 - What changed: CS-025 read_pdf takes storage as a keyword argument and states its Document shape; new CS-118 blocks_from_pages (domain/layout.py); Stack row and Framework Rules row for pypdf.
 - Why: DR-017
 - Tasks affected: T-110, T-111
+
+### SC-012 — 2026-10-06
+- What changed: LangChain Stack row (packages langchain, langchain-core, langchain-anthropic, langchain-openai, langchain-deepseek; provider chosen per role); Framework Rules row for LangChain also allows prompts/registry.py; new ADR-009; OD-03 removed from Open Decisions.
+- Why: DR-018
+- Tasks affected: T-111, T-305, T-403, T-404, T-505
+- Also in SC-012: CS-026 LLMPort lists structured and prompt_version (chat_with_tools waits, DEBT-012); CS-029 read_invoice T-111 → T-208 and now wraps the new CS-119 extract_invoice (application/use_cases/extract_invoice.py, in T-111); the extract_invoice prompts belong to CS-119.
