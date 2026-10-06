@@ -4,10 +4,10 @@ Overwritten by /end-session. Under 200 words. Enough to continue with no other c
 
 Last updated: 2026-10-06
 
-- Where things stand: G-01 Spine and G-02 File intake built and tested (T-101–T-108). Upload → file stored once → Arq job → one run row, ledger "received", one trace.
-- Group / task: none current. Next is G-03 Invoice contracts and reading (sonnet): T-112, T-109, T-110.
-- Branch state: T-101 merged (#1). PRs #2–#8 (t-102…t-108) are stacked per task and await merge in order, then the docs PR (docs-session-workflow, on top of #8). Retarget each next PR to main as the one below merges.
-- Exact next step: after the stack merges, run /start-session, then /next-group to branch g03-invoice-contracts-and-reading from main.
-- Blockers: none for G-03. Decide OD-03 (LLM provider and pinned model ids) before G-04. Open questions Q-001–Q-005 do not block G-03.
+- Where things stand: G-01, G-02, G-03 built (T-101–T-110, T-112); INC-1 needs only G-04. T-109 delivered the port, contract and routing rule; the Jev adapter moved to T-204, the intent node to T-208.
+- Group / task: none current. Next is G-04 Extraction (sonnet): T-111, T-113.
+- Branch state: T-101 merged. Open stack, each on the one before: #2 (t-102) … #8 (t-108), #9 (docs-session-workflow), #10 (g03-invoice-contracts-and-reading). Merge in order, retargeting each next PR to main.
+- Exact next step: Hifzan decides OD-03 (LLM provider, pinned model ids, embedding model); then, once the stack merges, /start-session and /next-group for G-04.
+- Blockers: OD-03 blocks T-111. OD-04 (Jev API shape) blocks T-204.
 - Uncommitted work: none.
-- Tests: 178 unit pass; 23 integration pass against local Postgres 16 + Redis (S3 tests need MinIO or moto on :9000).
+- Tests: 280 unit pass. Integration (Postgres 16, Redis, S3/moto) last passed at G-02.
