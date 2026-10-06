@@ -1,32 +1,35 @@
 {
   "permissions": {
     "allow": [
+      "Bash(python3 scripts/progress.py:*)",
       "Bash(uv run:*)",
-      "Bash(uv sync:*)",
-      "Bash(uv run pytest:*)",
-      "Bash(uv run ruff:*)",
-      "Bash(uv run mypy:*)",
-      "Bash(uv run alembic:*)",
-      "Bash(uv run lint-imports:*)",
-      "Bash(make lint)",
-      "Bash(make typecheck)",
-      "Bash(make test-unit)",
-      "Bash(make test-int)",
-      "Bash(make test-scenarios)",
-      "Bash(docker compose ps:*)",
+      "Bash(uv sync)",
+      "Bash(make:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git switch:*)",
+      "Bash(docker compose ps)",
       "Bash(docker compose logs:*)"
     ],
     "deny": [
-      "Bash(rm -rf:*)",
       "Bash(git push --force:*)",
-      "Bash(git push -f:*)",
-      "Bash(curl -X POST:*)",
-      "Bash(curl -X PUT:*)",
-      "Bash(curl -X PATCH:*)",
-      "Bash(curl -X DELETE:*)",
-      "Bash(curl --data:*)",
-      "Bash(curl -d:*)",
-      "Read(./.env)"
+      "Bash(rm -rf:*)",
+      "Read(.env)",
+      "Read(**/*.pem)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/progress.py summary || true"
+          }
+        ]
+      }
     ]
   }
 }

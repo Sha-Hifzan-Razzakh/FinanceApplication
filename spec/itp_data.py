@@ -282,6 +282,7 @@ MODELS = [
     # intake
     ("M-04", "FileRecord", "contracts/intake.py", "Persistence record", "One stored file with its provenance", "BaseModel", "extra='forbid'", "sha256 is 64 lowercase hex", "T-106"),
     ("M-05", "UploadResponse", "contracts/intake.py", "API response", "Result of POST /invoices/upload", "BaseModel", "—", "—", "T-107"),
+    ("M-59", "UploadMeta", "contracts/intake.py", "Service input", "What the caller knows about an incoming file; the entity comes from the Principal", "BaseModel", "frozen=True, extra='forbid'", "—", "T-106"),
     # invoice
     ("M-06", "InvoiceLine", "contracts/invoice.py", "Document value", "One invoice line with its source quote", "BaseModel", "extra='forbid'", "amount == quantity × unit_price (±0.01)", "T-112"),
     ("M-07", "InvoiceDraft", "contracts/invoice.py", "LLM output schema", "What the model fills; loose, quoted, not yet trusted", "BaseModel", "extra='forbid'", "every non-null field has an entry in field_quotes", "T-111"),
@@ -340,7 +341,7 @@ MODELS = [
     ("M-52", "LedgerEntry", "contracts/run.py", "Control record", "One hash-chained ledger row", "BaseModel", "frozen=True", "—", "T-104"),
     ("M-53", "RecoveryRule", "control/recovery.py", "Configuration value", "Error type → response, limit, target", "BaseModel", "frozen=True", "—", "T-306"),
     # events
-    ("M-54", "InvoiceReceived", "contracts/events.py", "Event", "A new file is stored and ready for a run", "BaseModel", "frozen=True", "—", "T-108"),
+    ("M-54", "InvoiceReceived", "contracts/events.py", "Event", "A new file is stored and ready for a run", "BaseModel", "frozen=True", "—", "T-106"),
     ("M-55", "ApprovalRequested", "contracts/events.py", "Event", "A run paused for approval", "BaseModel", "frozen=True", "—", "T-302"),
     ("M-56", "InvoicePosted", "contracts/events.py", "Event", "A posting was verified", "BaseModel", "frozen=True", "—", "T-214"),
     ("M-57", "RunFinished", "contracts/events.py", "Event", "A run reached a terminal state", "BaseModel", "frozen=True", "—", "T-208"),
@@ -353,7 +354,8 @@ FIELDS = {
     "Quote": [("page", "int", R, "ge=1", "Page number in the source file"), ("text", "str", R, "max_length=300", "Verbatim text the value came from"), ("bbox", "tuple[float,float,float,float] | None", "None", "", "Box on the page, when the parser gives one")],
     "Fact[T]": [("value", "T", R, "", "The value itself"), ("source", "Literal['observed','extracted','inferred','assumed']", R, "", "observed = system of record; extracted = document; inferred = model/memory"), ("observation_id", "UUID | None", "None", "required if observed", "Observation row backing the fact"), ("observed_at", "datetime", R, "tz-aware", "When it was read"), ("quote", "Quote | None", "None", "", "Document quote for extracted facts")],
     "Principal": [("subject", "str", R, "", "User id or agent principal id"), ("kind", "Literal['user','agent']", R, "", "Who is acting"), ("entity", "Literal['meridian-supply','meridian-projects']", R, "", "Legal entity; every query is filtered by it"), ("roles", "list[str]", "[]", "", "e.g. ap_clerk, ap_lead, treasury"), ("scopes", "list[str]", "[]", "", "Tool scopes, e.g. erp.read, erp.post")],
-    "FileRecord": [("id", "UUID", R, "", ""), ("entity", "EntityId", R, "", ""), ("sha256", "str", R, "pattern ^[a-f0-9]{64}$", "Dedupe key"), ("channel", "Literal['email','portal','scan']", R, "", "Where it came from"), ("sender", "str | None", "None", "", "Email sender or portal name"), ("object_key", "str", R, "starts with entity/", "Key in object storage"), ("mime_type", "Literal['application/pdf','image/png','image/jpeg','image/tiff']", R, "", ""), ("size_bytes", "int", R, "gt=0, le=20_000_000", ""), ("untrusted_text_id", "UUID | None", "None", "", "Email body / transcript stored as untrusted text"), ("received_at", "datetime", R, "", ""), ("status", "Literal['stored','processing','done','held','rejected']", "'stored'", "", "")],
+    "FileRecord": [("id", "UUID", R, "", ""), ("entity", "EntityId", R, "", ""), ("sha256", "str", R, "pattern ^[a-f0-9]{64}$", "Dedupe key"), ("channel", "Literal['email','portal','scan']", R, "", "Where it came from"), ("sender", "str | None", "None", "", "Email sender or portal name"), ("object_key", "str", R, "starts with entity/", "Key in object storage"), ("mime_type", "Literal['application/pdf','image/png','image/jpeg','image/tiff']", R, "", ""), ("size_bytes", "int", R, "gt=0, le=MAX_UPLOAD_BYTES (20_000_000)", ""), ("untrusted_text_id", "UUID | None", "None", "", "Email body / transcript stored as untrusted text"), ("received_at", "datetime", R, "", ""), ("status", "Literal['stored','processing','done','held','rejected']", "'stored'", "", "")],
+    "UploadMeta": [("channel", "Literal['email','portal','scan']", R, "", "Where it came from"), ("sender", "str | None", "None", "", "Email sender or portal name"), ("untrusted_text_id", "UUID | None", "None", "", "Email body / transcript stored as untrusted text")],
     "UploadResponse": [("file_id", "UUID", R, "", ""), ("run_id", "UUID | None", "None", "", "Set when a run started"), ("duplicate", "bool", "False", "", "True if the hash was already stored")],
     "InvoiceLine": [("description", "str", R, "max_length=300", "Line text as printed"), ("sku", "str | None", "None", "", "Filled by line mapping"), ("quantity", "Decimal", R, "gt=0", ""), ("unit_price", "Decimal", R, "ge=0, decimal_places≤4", ""), ("amount", "Decimal", R, "ge=0", "Line net amount"), ("vat_rate", "Decimal", "Decimal('0.05')", "ge=0, le=1", "UAE standard 5%"), ("source", "Quote", R, "", "Where this line was read")],
     "InvoiceDraft": [("supplier_name", "str | None", "None", "", ""), ("supplier_trn", "str | None", "None", "", "Tax registration number"), ("number", "str | None", "None", "", ""), ("issued_on", "date | None", "None", "", ""), ("due_on", "date | None", "None", "", ""), ("currency", "str | None", "None", "", ""), ("po_number", "str | None", "None", "", ""), ("lines", "list[InvoiceLine]", "[]", "", ""), ("subtotal", "Decimal | None", "None", "", ""), ("vat", "Decimal | None", "None", "", ""), ("total", "Decimal | None", "None", "", ""), ("printed_iban", "str | None", "None", "", "Never used to pay"), ("field_quotes", "dict[str, Quote]", "{}", "", "Quote per filled field")],
@@ -401,13 +403,13 @@ FIELDS = {
     "ToolSpec": [("name", "str", R, "", ""), ("server", "Literal['erp','mail','portal','ask','memory']", R, "", ""), ("risk", "Literal['read','reversible_write','irreversible_write','external','money']", R, "", ""), ("input_model", "type[BaseModel]", R, "", ""), ("output_model", "type[BaseModel]", R, "", ""), ("requires", "list[str]", "[]", "", "Facts that must be present and fresh"), ("guard", "Callable[[InvoiceRunState], bool] | None", "None", "", "Extra precondition"), ("timeout_s", "float", "10.0", "", ""), ("cost_usd", "Decimal", "Decimal(0)", "", ""), ("supports_dry_run", "bool", "False", "", ""), ("verify_with", "str | None", "None", "", "Re-read tool"), ("undo", "str | None", "None", "", "Compensation tool"), ("scope", "str", R, "", "Vault scope, e.g. erp.post")],
     "ApprovalRequest": [("id", "UUID", R, "", ""), ("run_id", "UUID", R, "", ""), ("entity", "EntityId", R, "", ""), ("proposals", "list[ResolutionProposal]", "[]", "", ""), ("expected_effect", "ExpectedEffect", R, "", ""), ("approvers_required", "Literal[1,2]", R, "", ""), ("state_digest", "str", R, "", "For revalidation"), ("expires_at", "datetime", R, "", "24 h default"), ("status", "Literal['pending','approved','declined','expired']", "'pending'", "", "")],
     "ApprovalDecision": [("approval_id", "UUID", R, "", ""), ("decision", "Literal['approve','decline']", R, "", ""), ("approver", "str", R, "", "Filled from the token, not the body"), ("comment", "str | None", "None", "required on decline", ""), ("signed_at", "datetime", R, "", "")],
-    "LedgerEntry": [("run_id", "UUID", R, "", ""), ("seq", "int", R, "ge=1", ""), ("kind", "str", R, "", "e.g. decision, action, observation, approval"), ("body", "dict", R, "", ""), ("prev_hash", "str | None", R, "", ""), ("hash", "str", R, "", "sha256(prev_hash + body)"), ("trace_id", "str", R, "", ""), ("at", "datetime", R, "", "")],
+    "LedgerEntry": [("run_id", "UUID", R, "", ""), ("seq", "int", R, "ge=1", ""), ("kind", "str", R, "", "e.g. decision, action, observation, approval"), ("body", "dict[str, Any]", R, "", "JSON values only"), ("prev_hash", "str | None", R, "", ""), ("hash", "str", R, "", "sha256(prev_hash + canonical JSON of run_id, seq, kind, body, trace_id, at)"), ("trace_id", "str", R, "", ""), ("at", "datetime", R, "", "")],
     "RecoveryRule": [("error", "str", R, "", "Typed error class name"), ("response", "Literal['retry','wait','re_extract','replan','hold','stop','abandon']", R, "", ""), ("limit", "int", R, "", ""), ("target", "str", R, "", "Node to route to")],
     "InvoiceReceived": [("event_id", "UUID", R, "", ""), ("entity", "EntityId", R, "", ""), ("file_id", "UUID", R, "", ""), ("sha256", "str", R, "", ""), ("channel", "str", R, "", ""), ("occurred_at", "datetime", R, "", "")],
     "ApprovalRequested": [("event_id", "UUID", R, "", ""), ("approval_id", "UUID", R, "", ""), ("run_id", "UUID", R, "", ""), ("approvers_required", "int", R, "", ""), ("occurred_at", "datetime", R, "", "")],
     "InvoicePosted": [("event_id", "UUID", R, "", ""), ("run_id", "UUID", R, "", ""), ("posting_id", "str", R, "", ""), ("amount_payable", "Decimal", R, "", ""), ("occurred_at", "datetime", R, "", "")],
     "RunFinished": [("event_id", "UUID", R, "", ""), ("run_id", "UUID", R, "", ""), ("terminal", "str", R, "", ""), ("steps", "int", R, "", ""), ("cost_usd", "Decimal", R, "", ""), ("occurred_at", "datetime", R, "", "")],
-    "Settings": [("database_url", "PostgresDsn", R, "", ""), ("redis_url", "RedisDsn", R, "", ""), ("object_bucket", "str", R, "", ""), ("vault_url", "HttpUrl", R, "", ""), ("erp_mcp_url", "HttpUrl", R, "", ""), ("mail_mcp_url", "HttpUrl", R, "", ""), ("llm_extract_model", "str", R, "", "Pinned id"), ("llm_reason_model", "str", R, "", "Pinned id"), ("jev_model", "str", R, "not 'jev-latest'", "Pinned version"), ("embedding_model", "str", R, "", "Pinned; stored with every vector"), ("post_alone_max_aed", "Decimal", "Decimal('25000')", "gt=0", ""), ("two_approver_min_aed", "Decimal", "Decimal('250000')", "gt=0", ""), ("daily_autonomous_cap_aed", "Decimal", "Decimal('500000')", "gt=0", ""), ("doc_type_threshold", "float", "0.9", "", ""), ("line_map_threshold", "float", "0.9", "", ""), ("near_duplicate_threshold", "float", "0.7", "", ""), ("approval_ttl_hours", "int", "24", "", ""), ("otel_endpoint", "HttpUrl | None", "None", "", "")],
+    "Settings": [("database_url", "PostgresDsn", R, "", ""), ("redis_url", "RedisDsn", R, "", ""), ("object_bucket", "str", R, "", ""), ("vault_url", "HttpUrl", R, "", ""), ("erp_mcp_url", "HttpUrl", R, "", ""), ("mail_mcp_url", "HttpUrl", R, "", ""), ("llm_extract_model", "str", R, "", "Pinned id"), ("llm_reason_model", "str", R, "", "Pinned id"), ("jev_model", "str", R, "not 'jev-latest'", "Pinned version"), ("embedding_model", "str", R, "", "Pinned; stored with every vector"), ("post_alone_max_aed", "Decimal", "Decimal('25000')", "gt=0", ""), ("two_approver_min_aed", "Decimal", "Decimal('250000')", "gt=0", ""), ("daily_autonomous_cap_aed", "Decimal", "Decimal('500000')", "gt=0", ""), ("doc_type_threshold", "float", "0.9", "", ""), ("line_map_threshold", "float", "0.9", "", ""), ("near_duplicate_threshold", "float", "0.7", "", ""), ("approval_ttl_hours", "int", "24", "", ""), ("otel_endpoint", "HttpUrl | None", "None", "", ""), ("auth_issuer", "str", R, "", "Expected iss claim of bearer tokens"), ("auth_audience", "str", R, "", "Expected aud claim of bearer tokens"), ("auth_public_key", "str", R, "PEM; \\n escapes accepted", "Public key that verifies RS256 tokens"), ("agent_subject", "str", "'agent:invoice-to-pay'", "", "Principal subject the agent runs as")],
 }
 CODE = [
     # ---- T-101 project + settings
@@ -415,30 +417,30 @@ CODE = [
     ("CS-002", "T-101", "config/settings.py", "config", "function", "get_settings", "@lru_cache def get_settings() -> Settings", "Single cached settings instance for Depends", "functools.lru_cache", "", "Settings", "—"),
     ("CS-003", "T-101", "main.py", "api", "function", "create_app", "def create_app() -> FastAPI", "App factory: routers, middleware, exception handlers", "FastAPI(), include_router, add_exception_handler", "Settings", "", "—"),
     ("CS-004", "T-101", "main.py", "api", "function", "lifespan", "@asynccontextmanager async def lifespan(app)", "Open DB pool, Redis, MCP sessions, checkpointer; close on shutdown", "FastAPI lifespan", "Settings", "", "—"),
-    ("CS-005", "T-101", "api/errors.py", "api", "function", "domain_error_handler", "async def domain_error_handler(req, exc: DomainError) -> JSONResponse", "Map typed domain errors to one error envelope and status", "FastAPI exception_handler", "", "", "—"),
+    ("CS-005", "T-101", "api/errors.py", "api", "function", "domain_error_handler", "async def domain_error_handler(req, exc: DomainError) -> JSONResponse", "Map typed domain errors to one error envelope {error: {type, message}}; status from DomainError.status_code (default 400)", "FastAPI exception_handler", "", "", "—"),
     # ---- T-102 principal
-    ("CS-006", "T-102", "api/deps.py", "api", "dependency", "get_principal", "async def get_principal(token = Depends(oauth2)) -> Principal", "Validate JWT, build Principal with entity, roles, scopes", "FastAPI Depends, OAuth2PasswordBearer", "", "Principal", "Received"),
+    ("CS-006", "T-102", "api/deps.py", "api", "dependency", "get_principal", "async def get_principal(token = Depends(oauth2)) -> Principal", "Validate RS256 JWT (iss, aud, exp, sub required); claims sub/entity/roles/scope/kind → Principal; any failure 401", "FastAPI Depends, OAuth2PasswordBearer", "", "Principal", "Received"),
     ("CS-007", "T-102", "api/deps.py", "api", "dependency", "require_role", "def require_role(*roles) -> Callable", "Dependency factory that refuses callers without a role", "FastAPI Depends (callable factory)", "Principal", "", "Escalation"),
     ("CS-008", "T-102", "application/context.py", "application", "contextvar", "current_principal", "current_principal: ContextVar[Principal]", "Carry the principal into graph nodes, adapters and tools", "contextvars", "Principal", "", "—"),
     # ---- T-103 common contracts
     ("CS-009", "T-103", "contracts/common.py", "contracts", "model", "Quote / Fact[T] / Principal", "class Fact(BaseModel, Generic[T])", "Provenance-carrying value types", "Pydantic Generic models, model_validator", "", "Quote, Fact[T], Principal", "Belief"),
     ("CS-010", "T-103", "contracts/common.py", "contracts", "type alias", "EntityId", "EntityId = Literal['meridian-supply','meridian-projects']", "One definition of the legal entities", "typing.Literal", "", "", "—"),
     # ---- T-104 ledger
-    ("CS-011", "T-104", "control/ledger.py", "control", "class", "RunLedger", "class RunLedger", "Append-only hash-chained ledger per run", "— (SQLAlchemy async session)", "LedgerEntry", "LedgerEntry", "All"),
-    ("CS-012", "T-104", "control/ledger.py", "control", "method", "RunLedger.append", "async def append(self, run_id, kind, body) -> LedgerEntry", "Hash body with previous hash and insert", "hashlib.sha256", "", "LedgerEntry", "All"),
+    ("CS-011", "T-104", "control/ledger.py", "control", "class", "RunLedger", "class RunLedger(sessions, trace_id: Callable[[], str])", "Append-only hash-chained ledger per run; trace_id provider injected (control/ imports no OpenTelemetry)", "— (SQLAlchemy async session)", "LedgerEntry", "LedgerEntry", "All"),
+    ("CS-012", "T-104", "control/ledger.py", "control", "method", "RunLedger.append", "async def append(self, run_id, kind, body) -> LedgerEntry", "Per-run advisory lock; hash every column with the previous hash; insert", "hashlib.sha256", "", "LedgerEntry", "All"),
     ("CS-013", "T-104", "control/ledger.py", "control", "method", "RunLedger.verify_chain", "async def verify_chain(self, run_id) -> bool", "Recompute every hash; detect edits", "—", "LedgerEntry", "", "—"),
     # ---- T-105 tracing
-    ("CS-014", "T-105", "observability/tracing.py", "observability", "function", "setup_tracing", "def setup_tracing(settings) -> TracerProvider", "OTLP exporter, resource attributes, LangChain callback bridge", "OpenTelemetry SDK, FastAPIInstrumentor", "Settings", "", "—"),
-    ("CS-015", "T-105", "observability/tracing.py", "observability", "context manager", "run_span", "def run_span(run_id) -> ContextManager[Span]", "Root span per run with run.id and entity attributes", "OpenTelemetry tracer.start_as_current_span", "", "", "Received"),
+    ("CS-014", "T-105", "observability/tracing.py", "observability", "function", "setup_tracing", "def setup_tracing(settings) -> TracerProvider", "One provider per process; OTLP exporter when configured; resource attributes", "OpenTelemetry SDK, FastAPIInstrumentor", "Settings", "", "—"),
+    ("CS-015", "T-105", "observability/tracing.py", "observability", "context manager", "run_span", "def run_span(run_id) -> ContextManager[Span]", "Root span per run with run.id and entity attributes; continues the active trace; binds run_id/entity to logs", "OpenTelemetry tracer.start_as_current_span", "", "", "Received"),
     # ---- T-106 files
     ("CS-016", "T-106", "application/ports.py", "application", "port", "StoragePort", "class StoragePort(Protocol)", "put/get/delete/presign bytes", "typing.Protocol", "", "", "—"),
     ("CS-017", "T-106", "adapters/s3_storage.py", "adapters", "adapter", "S3Storage", "class S3Storage(StoragePort)", "Object storage implementation with entity-prefixed keys", "boto3 / aioboto3", "", "", "Actuation"),
-    ("CS-018", "T-106", "files/service.py", "application", "method", "FileService.put", "async def put(self, data: bytes, meta: UploadMeta, p: Principal) -> FileRecord", "sha256, sniff mime, dedupe, store, write FileRecord, emit InvoiceReceived", "python-magic, StoragePort", "Principal", "FileRecord, InvoiceReceived", "Received"),
+    ("CS-018", "T-106", "files/service.py", "application", "method", "FileService.put", "async def put(self, data: bytes, meta: UploadMeta, p: Principal) -> tuple[FileRecord, bool]", "sha256, sniff mime, dedupe per entity, store at {entity}/{sha256}, write FileRecord, emit InvoiceReceived (also on duplicates); returns (record, duplicate)", "python-magic, StoragePort", "Principal", "FileRecord, InvoiceReceived", "Received"),
     # ---- T-107 upload
-    ("CS-019", "T-107", "api/routers/intake.py", "api", "route", "POST /invoices/upload", "async def upload(file: UploadFile, p = Depends(get_principal)) -> UploadResponse", "Accept scan/PDF, enforce limits, call FileService.put, return 202", "FastAPI UploadFile, status_code=202", "Principal", "UploadResponse", "Received"),
+    ("CS-019", "T-107", "api/routers/intake.py", "api", "route", "POST /invoices/upload", "async def upload(file: UploadFile, p = Depends(get_principal)) -> UploadResponse", "Accept scan/PDF; 413 above MAX_UPLOAD_BYTES; 415 unless sniffed bytes are an allowed MimeType; FileService.put; 202", "FastAPI UploadFile, status_code=202", "Principal", "UploadResponse", "Received"),
     # ---- T-108 worker
-    ("CS-020", "T-108", "workers/intake.py", "workers", "job", "handle_invoice_received", "async def handle_invoice_received(evt: InvoiceReceived) -> None", "Start one run per file hash (idempotent)", "Arq job / Celery task", "InvoiceReceived", "", "Received"),
-    ("CS-021", "T-108", "application/use_cases/settle_invoice.py", "application", "use case", "start_settle_run", "async def start_settle_run(file: FileRecord, p: Principal) -> UUID", "Create run row, ledger open, invoke run_graph with thread_id", "LangGraph ainvoke(config={'thread_id': ...})", "FileRecord, Principal", "", "Received"),
+    ("CS-020", "T-108", "workers/intake.py", "workers", "job", "handle_invoice_received", "async def handle_invoice_received(evt: InvoiceReceived, deps: IntakeDeps) -> None", "Start one run per file hash (idempotent); acts as the agent principal (Settings.agent_subject) for evt.entity", "Arq job / Celery task", "InvoiceReceived", "", "Received"),
+    ("CS-021", "T-108", "application/use_cases/settle_invoice.py", "application", "use case", "start_settle_run", "async def start_settle_run(file: FileRecord, p: Principal, *, runs: RunStore, ledger: LedgerWriter) -> UUID", "Create run row, ledger open, invoke run_graph with thread_id", "LangGraph ainvoke(config={'thread_id': ...})", "FileRecord, Principal", "", "Received"),
     # ---- T-109 classification
     ("CS-022", "T-109", "application/ports.py", "application", "port", "DecisionPort", "class DecisionPort(Protocol): async def decide(self, schema: type[T], payload: str) -> T", "Typed decisions without text generation", "typing.Protocol", "", "", "—"),
     ("CS-023", "T-109", "adapters/jev_decisions.py", "adapters", "adapter", "JevDecisions", "class JevDecisions(DecisionPort)", "Translate a Pydantic decision schema into Jev typed questions; pinned model", "Jev choice / probability questions (HTTP API)", "", "DocumentClassification, DuplicateScores, LineMapping, ScopeDecision, QueryClassification", "Decision"),
@@ -447,7 +449,7 @@ CODE = [
     ("CS-025", "T-110", "adapters/llamaindex_reader.py", "adapters", "adapter", "read_pdf", "async def read_pdf(file: FileRecord) -> list[Document]", "Layout-aware text with page numbers; tables kept whole", "LlamaIndex PDF reader / layout parser, Document", "FileRecord", "", "Perception"),
     # ---- T-111 extraction
     ("CS-026", "T-111", "application/ports.py", "application", "port", "LLMPort", "class LLMPort(Protocol): structured(prompt_id, vars, schema) / chat_with_tools(...)", "The only way the app reaches a language model", "typing.Protocol", "", "", "—"),
-    ("CS-027", "T-111", "adapters/langchain_llm.py", "adapters", "adapter", "LangChainLLM", "class LangChainLLM(LLMPort)", "init_chat_model per role; with_structured_output; usage → budget meter", "LangChain init_chat_model, with_structured_output, callbacks", "", "", "Decision, Budget"),
+    ("CS-027", "T-111", "adapters/langchain_llm.py", "adapters", "adapter", "LangChainLLM", "class LangChainLLM(LLMPort)", "init_chat_model per role; with_structured_output; usage → budget meter; OpenTelemetry callback bridge", "LangChain init_chat_model, with_structured_output, callbacks", "", "", "Decision, Budget"),
     ("CS-028", "T-111", "prompts/registry.py", "application", "class", "PromptRegistry", "class PromptRegistry: def get(self, prompt_id) -> ChatPromptTemplate", "Versioned prompts as data; id + version written to the ledger", "LangChain ChatPromptTemplate", "", "", "—"),
     ("CS-029", "T-111", "agents/nodes/read.py", "agents", "graph node", "read_invoice", "async def read_invoice(state) -> dict", "read_pdf → LLM InvoiceDraft → Invoice; one retry with errors; else Held for review", "LangGraph node", "FileRecord", "InvoiceDraft, Invoice, Fact[T]", "Decision, Perception"),
     # ---- T-112 invoice contracts
@@ -552,6 +554,15 @@ CODE = [
     # ---- INC-6
     ("CS-103", "T-601", "evals/deepeval/test_tool_sequences.py", "evals", "test module", "test_tool_correctness", "def test_tool_correctness(sampled_run)", "Expected tool sequence per run type", "DeepEval ToolCorrectnessMetric", "", "", "—"),
     ("CS-104", "T-602", "evals/promptfoo/promptfooconfig.yaml", "evals", "config", "redteam suite", "providers: [http → POST /runs]", "Adversarial invoices and spoofed emails; assert no post above gap, no bank change", "promptfoo redteam, HTTP provider, assertions", "", "", "—"),
+    ("CS-108", "T-105", "observability/tracing.py", "observability", "function", "setup_logging / current_trace_id / inject_trace / attached_trace", "def setup_logging() -> None", "structlog JSON with run_id, entity, trace_id; trace id for ledger entries; trace context across the job queue", "structlog, OpenTelemetry propagate", "", "", "—"),
+    ("CS-109", "T-106", "application/ports.py", "application", "port", "FileRecordStore / EventPublisher", "class FileRecordStore(Protocol); class EventPublisher(Protocol)", "Persist FileRecords; hand events to their transport", "typing.Protocol", "FileRecord, InvoiceReceived", "", "—"),
+    ("CS-110", "T-106", "adapters/sql_file_records.py", "adapters", "adapter", "SqlFileRecordStore", "class SqlFileRecordStore(FileRecordStore)", "file_records on Postgres; first insert wins per (entity, sha256)", "SQLAlchemy async, postgresql insert on_conflict_do_nothing", "FileRecord", "FileRecord", "Received"),
+    ("CS-111", "T-106", "contracts/common.py", "contracts", "function", "uuid7", "def uuid7() -> UUID", "UUIDv7 (RFC 9562) with sub-millisecond counter for internal ids (C-05)", "os.urandom, time.time_ns", "", "", "—"),
+    ("CS-112", "T-107", "api/routers/intake.py", "api", "route", "GET /invoices/{file_id}", "async def get_file(file_id: UUID, p = Depends(get_principal)) -> FileRecord", "The caller's FileRecord; another entity's file is 404", "FastAPI APIRouter", "Principal", "FileRecord", "—"),
+    ("CS-113", "T-108", "application/ports.py", "application", "port", "RunStore / LedgerWriter", "class RunStore(Protocol); class LedgerWriter(Protocol)", "Run rows and ledger appends behind ports", "typing.Protocol", "", "LedgerEntry", "—"),
+    ("CS-114", "T-108", "adapters/sql_runs.py", "adapters", "adapter", "SqlRunStore", "class SqlRunStore(RunStore)", "runs on Postgres; one run per thread_id", "SQLAlchemy async, postgresql insert on_conflict_do_nothing", "", "", "Received"),
+    ("CS-115", "T-108", "adapters/arq_events.py", "adapters", "adapter", "ArqEventPublisher", "class ArqEventPublisher(EventPublisher)", "Enqueue InvoiceReceived with the caller's trace context", "Arq enqueue_job", "InvoiceReceived", "", "Received"),
+    ("CS-116", "T-108", "workers/settings.py", "workers", "config", "WorkerSettings", "class WorkerSettings", "Arq worker: functions, startup (DB pool, IntakeDeps), shutdown", "Arq WorkerSettings", "Settings", "", "—"),
     ("CS-105", "T-603", "tests/e2e/test_approval_console.py", "tests", "test module", "test_approve_decline_expired", "def test_approve_decline_expired(page)", "Approval console paths with page objects", "Playwright pytest-playwright, expect", "", "", "—"),
     ("CS-106", "T-604", "observability/metrics.py", "observability", "module", "metrics", "runs_total{terminal}, exceptions_total{kind}, cost_per_invoice, time_to_post", "Business and cost metrics", "OpenTelemetry metrics API", "", "", "—"),
     ("CS-107", "T-605", ".github/workflows/release-gate.yml", "evals", "config", "release-gate", "jobs: unit, scenarios, deepeval, ragas, promptfoo, e2e", "Block merge on any red suite", "GitHub Actions", "", "", "—"),
@@ -568,6 +579,10 @@ PORTS = [
     ("BrowserPort", "collect(portal) -> list[FileRecord]", "PortalCollector", "Playwright", "async_playwright, BrowserContext, page.locator, page.expect_download", "Fresh context per run"),
     ("TranscriberPort", "transcribe(audio) -> Transcript", "WhisperTranscriber", "Whisper", "faster-whisper WhisperModel, vad_filter, initial_prompt", "Output stored untrusted"),
     ("StoragePort", "put, get, delete, presign", "S3Storage", "Object storage SDK", "boto3 / aioboto3", "Keys prefixed by entity"),
+    ("FileRecordStore", "get_by_hash(entity, sha256), get(entity, file_id), insert(record) -> first record on conflict", "SqlFileRecordStore", "SQLAlchemy", "insert … on_conflict_do_nothing", "UNIQUE(entity, sha256); every read filtered by entity"),
+    ("EventPublisher", "publish(event)", "ArqEventPublisher", "Arq", "enqueue_job with _job_id, W3C trace carrier", "Job id = event id; carries the caller's trace"),
+    ("RunStore", "start(entity, thread_id, goal_type) -> (run_id, created)", "SqlRunStore", "SQLAlchemy", "insert … on_conflict_do_nothing", "UNIQUE(thread_id): one run per file"),
+    ("LedgerWriter", "append(run_id, kind, body) -> LedgerEntry", "RunLedger", "SQLAlchemy", "advisory lock, hash chain", "Implemented by control.ledger.RunLedger"),
 ]
 
 TOOLS = [
@@ -593,7 +608,7 @@ TOOLS = [
 ROUTES = [
     # (method, path, request, response, dependencies, status codes, task)
     ("POST", "/invoices/upload", "multipart UploadFile", "UploadResponse", "get_principal", "202, 413, 415, 401", "T-107"),
-    ("GET", "/invoices/{file_id}", "—", "FileRecord", "get_principal", "200, 404", "T-107"),
+    ("GET", "/invoices/{file_id}", "—", "FileRecord", "get_principal", "200, 404 (also for another entity's file)", "T-107"),
     ("GET", "/runs/{run_id}", "—", "InvoiceRunState (view)", "get_principal", "200, 404", "T-208"),
     ("GET", "/runs/{run_id}/events", "—", "text/event-stream", "get_principal", "200", "T-304"),
     ("GET", "/approvals?status=pending", "—", "list[ApprovalRequest]", "require_role('ap_lead','treasury')", "200", "T-302"),
@@ -678,10 +693,10 @@ AUTONOMY = [
 
 PERSISTENCE = [
     # (table / store, technology, owner, key columns, purpose, retention)
-    ("file_records", "Postgres", "Yours", "id, entity, sha256 UNIQUE(entity, sha256), channel, object_key, status", "Every stored file with provenance", "10 years (invoice records)"),
+    ("file_records", "Postgres", "Yours", "id, entity, sha256 UNIQUE(entity, sha256), channel, sender, object_key, mime_type, size_bytes, untrusted_text_id, received_at, status", "Every stored file with provenance", "10 years (invoice records)"),
     ("untrusted_text", "Postgres", "Yours", "id, entity, kind (email_body|transcript), text, source_ref", "Email bodies and transcripts kept as data", "2 years"),
-    ("runs", "Postgres", "Yours", "id, entity, thread_id, goal_type, status, terminal, started_at, finished_at", "One row per run", "10 years"),
-    ("run_ledger", "Postgres", "Yours", "run_id, seq, kind, body jsonb, prev_hash, hash, trace_id, at", "Hash-chained audit trail", "10 years, append-only"),
+    ("runs", "Postgres", "Yours", "id, entity, thread_id UNIQUE, goal_type, status (running|paused|finished), terminal (Succeeded|Failed|Stopped|Abandoned|Held|Rejected, set iff finished), started_at, finished_at", "One row per run", "10 years"),
+    ("run_ledger", "Postgres", "Yours", "run_id, seq, kind, body jsonb, prev_hash, hash, trace_id, at", "Hash-chained audit trail; UPDATE/DELETE/TRUNCATE refused by trigger", "10 years, append-only"),
     ("observations", "Postgres", "Yours", "id, run_id, tool, body jsonb, source_system, trust, at", "Validated tool results", "10 years"),
     ("belief_states", "Postgres", "Yours", "run_id, version, body jsonb", "State snapshot per transition", "2 years"),
     ("approvals", "Postgres", "Yours", "id, run_id, entity, expected_effect jsonb, approvers_required, state_digest, status, expires_at", "Pending and decided approvals", "10 years"),
@@ -695,7 +710,7 @@ PERSISTENCE = [
     ("run:{id}:tokens / :cost, day:{entity}:money", "Redis", "Yours", "atomic counters with TTL", "Budget meter", "TTL 2 days"),
     ("idem:{key}", "Redis (ERP MCP server)", "Yours", "SET NX with result pointer", "Server-side idempotency", "TTL 30 days"),
     ("attempts:{run}:{step}:{error}", "Redis", "Yours", "counter", "Recovery attempt counters", "TTL 30 days"),
-    ("invoices/{entity}/…", "Object storage", "File service", "sha256-named objects", "Original files", "10 years, immutable tier"),
+    ("{entity}/{sha256} in ITP_OBJECT_BUCKET", "Object storage", "File service", "sha256-named objects; credentials and endpoint from AWS_* variables", "Original files", "10 years, immutable tier"),
 ]
 
 EVENTS = [
@@ -772,7 +787,7 @@ STACK = [
     ("Evaluation", "promptfoo", "promptfoo (npm, via npx)", "current", "Red-team suite against the live endpoint", "T-602", "promptfoo.dev/docs", "Node 20+ required in CI"),
     ("Persistence", "PostgreSQL + pgvector", "postgres 16 with pgvector extension", "16 / pgvector 0.7+", "Records, ledger, checkpoints, vectors", "All", "github.com/pgvector/pgvector", "One database, separate schemas: itp, langgraph, vectors"),
     ("Persistence", "SQLAlchemy + asyncpg + Alembic", "sqlalchemy[asyncio], asyncpg, alembic", "2.x", "Data access and migrations for your tables", "T-104, T-106, T-302", "docs.sqlalchemy.org", "Async sessions only"),
-    ("Coordination", "Redis", "redis (redis-py asyncio)", "5.x", "Budget counters, idempotency, attempt counters", "T-211, T-212, T-306", "redis.readthedocs.io", "Every key has a TTL"),
+    ("Coordination", "Redis", "redis (redis-py asyncio)", "5.x", "Arq queue, budget counters, idempotency, attempt counters", "T-108, T-211, T-212, T-306", "redis.readthedocs.io", "Every key has a TTL"),
     ("Jobs", "Arq", "arq", "current", "Intake, transcription, ingestion jobs", "T-108, T-503, T-401", "arq-docs.helpmanual.io", "Or Celery — see Open Decisions"),
     ("Files", "Object storage", "aioboto3 (S3 API; MinIO locally)", "current", "Original files", "T-106", "aioboto3.readthedocs.io", "Bucket per environment; key prefix = entity"),
     ("Files", "python-magic", "python-magic", "current", "Content sniffing", "T-106", "pypi.org/project/python-magic", "Needs libmagic in the image"),
@@ -783,12 +798,14 @@ STACK = [
     ("Quality", "ruff", "ruff", "current", "Lint and format", "All", "docs.astral.sh/ruff", "ruff check + ruff format in CI"),
     ("Quality", "mypy", "mypy (pydantic plugin)", "current", "Static types, strict on domain/contracts/control", "All", "mypy.readthedocs.io", "strict = true for those packages"),
     ("Quality", "pytest", "pytest, pytest-asyncio, pytest-cov", "8.x", "Unit, integration, scenario tests", "All", "docs.pytest.org", "asyncio_mode = auto"),
+    ("Quality", "import-linter", "import-linter (dev)", "2.x", "Enforces the Framework Rules import boundaries (make lint)", "All", "import-linter.readthedocs.io", "Contracts live in pyproject.toml [tool.importlinter]"),
+    ("Auth", "PyJWT", "pyjwt[crypto]", "2.8+", "Bearer-token validation (RS256 against a configured public key)", "T-102", "pyjwt.readthedocs.io", "Import only in api/deps.py"),
 ]
 
 # (framework, import allowed only in, use it for, never use it for, APIs to use, you implement, gotchas)
 FRAMEWORK_RULES = [
     ("FastAPI", "api/, main.py", "Routes, dependencies, uploads, SSE", "Business rules, DB queries in route bodies", "APIRouter, Depends, UploadFile, StreamingResponse, lifespan, exception_handler", "get_principal, require_role, error handler, routers", "Routes stay thin: parse → call use case → return model. Entity always from get_principal."),
-    ("Pydantic", "contracts/, config/, any layer for models", "Every boundary: API, tools, LLM output, events, state", "Business logic inside validators beyond invariants", "BaseModel, ConfigDict, Field, field_validator, model_validator, TypeAdapter, BaseSettings", "All 58 contracts exactly as on the Contracts sheet", "Decimal for money (never float). extra='forbid' on inputs. model_dump(mode='json') for JSON."),
+    ("Pydantic", "contracts/, config/, any layer for models", "Every boundary: API, tools, LLM output, events, state", "Business logic inside validators beyond invariants", "BaseModel, ConfigDict, Field, field_validator, model_validator, TypeAdapter, BaseSettings", "All 59 contracts exactly as on the Contracts sheet", "Decimal for money (never float). extra='forbid' on inputs. model_dump(mode='json') for JSON."),
     ("LangChain", "adapters/langchain_llm.py only", "Model calls: structured output, tool binding, usage metadata", "Orchestration, retrieval pipelines, memory", "init_chat_model, ChatPromptTemplate, with_structured_output, bind_tools, AIMessage.usage_metadata", "LangChainLLM(LLMPort), PromptRegistry", "Never import langchain outside the adapter. Prompts come from PromptRegistry by id+version."),
     ("LangGraph", "agents/", "Run graph, resolution and answer subgraphs, checkpoints, interrupts", "Calling tools directly (use control.act), provider SDKs", "StateGraph, START, END, add_conditional_edges, Send, interrupt, Command, AsyncPostgresSaver", "Nodes, routing functions, InvoiceRunState", "A node resumed after interrupt() re-runs from its first line: keep side effects after the interrupt or idempotent. thread_id = entity:file_id."),
     ("LlamaIndex", "adapters/llamaindex_*.py only", "PDF reading, clause ingestion, hybrid retrieval", "Agents, answer generation (LangGraph owns it)", "IngestionPipeline, HierarchicalNodeParser, PGVectorStore, QueryFusionRetriever, BM25Retriever, MetadataFilters, BaseRetriever, BaseNodePostprocessor", "ContractIngestor, ContractRetriever._retrieve, VersionGuard, AccessRecheck", "The entity/access filter goes inside the query, before top-k. Metadata missing → refuse ingestion."),
@@ -888,7 +905,7 @@ COMMANDS = [
 
 # (path, created in task, purpose, content notes)
 BOOTSTRAP = [
-    ("pyproject.toml", "T-101", "Project metadata, dependencies, tool config", "[project] deps from the Stack sheet; [tool.ruff], [tool.mypy] strict for domain/contracts/control/application, [tool.pytest.ini_options] asyncio_mode='auto', [tool.importlinter] contracts from Framework Rules"),
+    ("pyproject.toml", "T-101", "Project metadata, dependencies, tool config", "[project] deps from the Stack sheet, each added by the task that first needs it; [tool.ruff], [tool.mypy] strict for domain/contracts/control/application, [tool.pytest.ini_options] asyncio_mode='auto', [tool.importlinter] contracts from Framework Rules"),
     ("uv.lock", "T-101", "Locked versions", "Committed; copy resolved versions into the Stack sheet"),
     ("CLAUDE.md", "T-101", "Standing instructions for Claude Code", "Generated with this workbook (claude_code_pack/CLAUDE.md)"),
     ("tasks/T-xxx.md", "T-101", "One prompt per task", "Generated with this workbook (claude_code_pack/tasks/)"),
@@ -988,7 +1005,7 @@ REPO_DOCS = [
     ("docs/CONVENTIONS.md", "generated", "On demand, by grep", "Spec rebuild", "Full conventions (condensed in CLAUDE.md)"),
     ("docs/GUARDRAILS.md", "generated", "On demand, by grep", "Spec rebuild", "Full never-list and Definition of Done"),
     ("docs/ARCHITECTURE.md", "generated", "On demand, grep a section; never whole", "Spec rebuild", "Layers, ports, graphs, controls, tools, routes, autonomy, recovery, persistence"),
-    ("docs/CONTRACTS.md", "generated", "On demand, grep a model; never whole", "Spec rebuild", "All 58 models as code"),
+    ("docs/CONTRACTS.md", "generated", "On demand, grep a model; never whole", "Spec rebuild", "All 59 models as code"),
     ("docs/FRAMEWORKS.md", "generated", "On demand, grep a framework", "Spec rebuild", "Stack and per-framework rules"),
     ("docs/TESTING.md", "generated", "On demand", "Spec rebuild", "Test catalogue and fixtures"),
     ("docs/ENVIRONMENT.md", "generated", "Setup and debugging", "Spec rebuild", "Services, env variables, commands"),
