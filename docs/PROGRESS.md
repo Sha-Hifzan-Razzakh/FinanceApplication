@@ -3,9 +3,9 @@
 Edited only by `python3 scripts/progress.py` (start · done · block · archive). Do not read or rewrite by hand.
 
 ## Current focus
-- Group: G-03
-- Branch: g03-invoice-contracts-and-reading
-- Since: 2026-10-06
+- Group: none
+- Branch: —
+- Since: —
 
 ## INC-1 · Walking skeleton
 | Task | Title | Group | Depends on | Status | Branch / PR | Updated | Notes |
@@ -19,7 +19,7 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 | T-107 | Upload route | G-02 | T-102, T-106 | done | #7 | 2026-10-06 |  |
 | T-108 | Intake job handler | G-02 | T-106 | done | #8 | 2026-10-06 |  |
 | T-109 | Document classification | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
-| T-110 | PDF reading | G-03 | T-106 | in progress | g03-invoice-contracts-and-reading | 2026-10-06 |  |
+| T-110 | PDF reading | G-03 | T-106 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
 | T-111 | Invoice extraction | G-04 | T-110, T-112 | todo |  |  |  |
 | T-112 | Invoice contracts and validators | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
 | T-113 | Extraction test set | G-04 | T-111 | todo |  |  |  |
@@ -118,3 +118,6 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 ### T-109 · Document classification · done 2026-10-06
 - Evidence: Non-invoice types never route to extraction and low confidence routes to hold (test_done_when_non_invoices_never_reach_extraction, test_done_when_low_type_confidence_goes_to_a_person); CS-023 moved to T-204 and CS-024 to T-208 (DR-015)
 - Tests: unit: tests/unit/domain/test_classification.py, tests/unit/contracts/test_decisions.py, tests/unit/application/test_decision_port.py (31)
+### T-110 · PDF reading · done 2026-10-06
+- Evidence: A two-page line-item table comes back as one table with page numbers (test_done_when_a_two_page_line_item_table_is_one_table_with_page_numbers on generated PDFs; test_done_when_a_two_page_table_comes_back_as_one_table_with_page_numbers in the layout module)
+- Tests: unit: tests/unit/domain/test_layout.py, tests/unit/adapters/test_llamaindex_reader.py (26)

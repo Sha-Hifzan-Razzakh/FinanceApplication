@@ -83,7 +83,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 |---|---|---|---|---|---|
 | CS-017 | T-106 | `adapters/s3_storage.py` | adapter | S3Storage | Object storage implementation with entity-prefixed keys |
 | CS-023 | T-204 | `adapters/jev_decisions.py` | adapter | JevDecisions | Translate a Pydantic decision schema into Jev typed questions; pinned model |
-| CS-025 | T-110 | `adapters/llamaindex_reader.py` | adapter | read_pdf | Layout-aware text with page numbers; tables kept whole |
+| CS-025 | T-110 | `adapters/llamaindex_reader.py` | adapter | read_pdf | Layout-aware text with page numbers; tables kept whole: Documents in reading order with metadata file_id, pages and kind (text or table); a table that spans pages is one Document |
 | CS-027 | T-111 | `adapters/langchain_llm.py` | adapter | LangChainLLM | init_chat_model per role; with_structured_output; usage → budget meter; OpenTelemetry callback bridge |
 | CS-039 | T-202 | `adapters/erp_mcp_client.py` | adapter | ErpMcpClient | ClientSession.call_tool; validate structured result into output models |
 | CS-040 | T-202 | `adapters/vault.py` | adapter | VaultCredentials | Short-lived credentials at call time; never in prompts |
@@ -165,6 +165,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 | CS-078 | T-305 | `domain/evidence.py` | function | collect_evidence | PO lines, receipts, observations as Evidence; memory marked inadmissible |
 | CS-102 | T-506 | `domain/supplier_scope.py` | function | facts_for_supplier | Drop any fact not belonging to the asking supplier |
 | CS-117 | T-109 | `domain/classification.py` | function | route_classification | Hold what is unclear or illegible, reject what is not an invoice, extract the rest |
+| CS-118 | T-110 | `domain/layout.py` | function | blocks_from_pages | Text blocks and tables from layout-mode page text; a table split across pages is one block (repeated header dropped, page furniture removed) |
 
 ### tests
 | ID | Task | Module | Kind | Name | Responsibility |

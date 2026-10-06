@@ -131,3 +131,10 @@ Record format: `### DR-NNN — YYYY-MM-DD — <title>` then bullets Closes · Co
 - Decision: route_classification(c, min_confidence) returns hold when doc_type_p or readable_p is below min_confidence (inclusive at the threshold), else extract for an invoice and reject for every other type (credit notes belong to another goal type). Callers pass Settings.doc_type_threshold for both probabilities.
 - Consequences: no separate readability setting (Q-006). The rule is a domain function, so the later intent node only wires it.
 - Decided by: Claude in G-03 (confirm in review)
+
+### DR-017 — 2026-10-06 — PDF reading: pypdf layout text, tables found by column gaps, split in a framework-free domain module
+- Closes: T-110 gaps (LlamaIndex PDFReader returns plain per-page text and has no table support; no way to fetch the file's bytes in the CS-025 signature; no Document shape)
+- Context: asked in the G-03 session.
+- Decision: pypdf becomes a direct dependency (Stack row, Framework Rules row, import allowed only in adapters/llamaindex_reader.py); read_pdf(file, *, storage: StoragePort) reads each page with extract_text(extraction_mode='layout') off the event loop and returns LlamaIndex Documents in reading order with metadata file_id, pages (1-based list) and kind (text|table). The layout logic is a pure domain function, blocks_from_pages (CS-118): a table is 2+ rows of 3+ cells separated by gaps of 3+ spaces, up to 2 blank lines apart; page-number furniture is dropped; a table at the end of page N continues onto page N+1 when the column count matches and the table is first on the page, or comes after a caption and repeats the header (repeated header dropped); a caption stays a text block. PDFs without a text layer give no Documents (OD-06 holds scans); non-PDF files and unreadable bytes raise ValueError.
+- Consequences: SC-011. DEBT-011 (T-111 holds a file whose read gives no Documents). A table that continues after a caption is emitted before that caption in the list.
+- Decided by: Hifzan (approach and output shape); Claude (detection thresholds, error handling)
