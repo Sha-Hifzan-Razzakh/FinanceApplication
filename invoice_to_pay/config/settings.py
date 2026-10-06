@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     near_duplicate_threshold: float = 0.7
     approval_ttl_hours: int = 24
     otel_endpoint: HttpUrl | None = None
+    auth_issuer: str = Field(description="Expected iss claim of bearer tokens")
+    auth_audience: str = Field(description="Expected aud claim of bearer tokens")
+    auth_public_key: str = Field(description="PEM public key that verifies RS256 tokens")
 
     @field_validator("jev_model")
     @classmethod
@@ -39,6 +42,12 @@ class Settings(BaseSettings):
         if value == "jev-latest":
             raise ValueError("jev_model must be a pinned version, not 'jev-latest'")
         return value
+
+    @field_validator("auth_public_key")
+    @classmethod
+    def _unescape_pem(cls, value: str) -> str:
+        """Accept a PEM written on one line with literal \\n, as .env files need."""
+        return value.replace("\\n", "\n")
 
     @model_validator(mode="after")
     def _approval_thresholds_ordered(self) -> Self:

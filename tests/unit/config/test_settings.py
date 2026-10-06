@@ -91,3 +91,20 @@ def test_cs002_get_settings_fails_when_required_missing(
     get_settings.cache_clear()
     with pytest.raises(ValidationError):
         get_settings()
+
+
+def test_cs001_auth_public_key_accepts_escaped_newlines(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pem = settings_env["ITP_AUTH_PUBLIC_KEY"]
+    monkeypatch.setenv("ITP_AUTH_PUBLIC_KEY", pem.replace("\n", "\\n"))
+    assert Settings().auth_public_key == pem  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("missing", ["ITP_AUTH_ISSUER", "ITP_AUTH_AUDIENCE", "ITP_AUTH_PUBLIC_KEY"])
+def test_cs001_auth_settings_are_required(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch, missing: str
+) -> None:
+    monkeypatch.delenv(missing)
+    with pytest.raises(ValidationError):
+        Settings()  # type: ignore[call-arg]
