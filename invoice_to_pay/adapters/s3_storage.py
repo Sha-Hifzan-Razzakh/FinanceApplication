@@ -22,8 +22,15 @@ def _checked(key: str) -> str:
 class S3Storage(StoragePort):
     """Object storage implementation with entity-prefixed keys."""
 
-    def __init__(self, *, session: aioboto3.Session, bucket: str, endpoint_url: str | None) -> None:
-        self._session = session
+    def __init__(
+        self,
+        *,
+        bucket: str,
+        session: aioboto3.Session | None = None,
+        endpoint_url: str | None = None,
+    ) -> None:
+        # Without an explicit session or endpoint, the AWS SDK reads AWS_* variables itself.
+        self._session = session or aioboto3.Session()
         self._bucket = bucket
         self._endpoint_url = endpoint_url
 

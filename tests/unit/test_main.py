@@ -61,3 +61,12 @@ def test_cs003_module_exposes_lazy_app_for_fastapi_cli(settings_env: dict[str, s
 
     assert "app" in dir(main)
     assert isinstance(main.app, FastAPI)
+
+
+def test_cs004_lifespan_builds_the_file_service(settings_env: dict[str, str]) -> None:
+    from invoice_to_pay.files.service import FileService
+
+    app = create_app()
+    with TestClient(app):
+        assert isinstance(app.state.file_service, FileService)
+    assert not hasattr(app.state, "file_service")

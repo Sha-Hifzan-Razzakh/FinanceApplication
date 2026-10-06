@@ -1,6 +1,7 @@
 """Ports: the Protocols the application depends on; adapters implement them."""
 
 from typing import Protocol
+from uuid import UUID
 
 from invoice_to_pay.contracts.common import EntityId
 from invoice_to_pay.contracts.events import InvoiceReceived
@@ -32,6 +33,10 @@ class FileRecordStore(Protocol):
 
     async def get_by_hash(self, entity: EntityId, sha256: str) -> FileRecord | None:
         """The entity's record for this hash, if stored."""
+        ...
+
+    async def get(self, entity: EntityId, file_id: UUID) -> FileRecord | None:
+        """The entity's record with this id, if any."""
         ...
 
     async def insert(self, record: FileRecord) -> FileRecord:

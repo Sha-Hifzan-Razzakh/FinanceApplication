@@ -1,5 +1,7 @@
 """FileRecordStore on Postgres (itp.file_records)."""
 
+from uuid import UUID
+
 from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, Uuid, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -41,6 +43,22 @@ class SqlFileRecordStore(FileRecordStore):
                     await session.execute(
                         select(file_records).where(
                             file_records.c.entity == entity, file_records.c.sha256 == sha256
+                        )
+                    )
+                )
+                .mappings()
+                .first()
+            )
+        return None if row is None else FileRecord.model_validate(dict(row))
+
+    async def get(self, entity: EntityId, file_id: UUID) -> FileRecord | None:
+        """The entity's record with this id, if any."""
+        async with self._sessions() as session:
+            row = (
+                (
+                    await session.execute(
+                        select(file_records).where(
+                            file_records.c.entity == entity, file_records.c.id == file_id
                         )
                     )
                 )

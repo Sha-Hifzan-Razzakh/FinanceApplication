@@ -2,13 +2,23 @@
 
 import hashlib
 from datetime import UTC, datetime
+from typing import get_args
+from uuid import UUID
 
 import magic
 
 from invoice_to_pay.application.ports import EventPublisher, FileRecordStore, StoragePort
 from invoice_to_pay.contracts.common import Principal, uuid7
 from invoice_to_pay.contracts.events import InvoiceReceived
-from invoice_to_pay.contracts.intake import FileRecord, UploadMeta
+from invoice_to_pay.contracts.intake import FileRecord, MimeType, UploadMeta
+
+ALLOWED_MIME_TYPES: frozenset[str] = frozenset(get_args(MimeType))
+
+
+def sniff_mime(data: bytes) -> str:
+    """MIME type read from the bytes themselves (libmagic), never from the client's claim."""
+    mime: str = magic.from_buffer(data, mime=True)
+    return mime
 
 
 class FileService:
@@ -41,7 +51,7 @@ class FileService:
                 "channel": meta.channel,
                 "sender": meta.sender,
                 "object_key": f"{p.entity}/{sha}",
-                "mime_type": magic.from_buffer(data, mime=True),
+                "mime_type": sniff_mime(data),
                 "size_bytes": len(data),
                 "untrusted_text_id": meta.untrusted_text_id,
                 "received_at": datetime.now(UTC),
@@ -51,6 +61,10 @@ class FileService:
         stored = await self._records.insert(record)
         await self._emit(stored)
         return stored, stored.id != record.id
+
+    async def get(self, file_id: UUID, p: Principal) -> FileRecord | None:
+        """The caller's entity's record with this id; another entity's file reads as absent."""
+        return await self._records.get(p.entity, file_id)
 
     async def _emit(self, record: FileRecord) -> None:
         await self._events.publish(

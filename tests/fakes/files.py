@@ -1,5 +1,7 @@
 """In-memory fakes for the storage, file-record and event ports."""
 
+from uuid import UUID
+
 from invoice_to_pay.contracts.common import EntityId
 from invoice_to_pay.contracts.events import InvoiceReceived
 from invoice_to_pay.contracts.intake import FileRecord
@@ -32,6 +34,11 @@ class InMemoryFileRecordStore:
 
     async def get_by_hash(self, entity: EntityId, sha256: str) -> FileRecord | None:
         return self.records.get((entity, sha256))
+
+    async def get(self, entity: EntityId, file_id: UUID) -> FileRecord | None:
+        return next(
+            (r for r in self.records.values() if r.id == file_id and r.entity == entity), None
+        )
 
     async def insert(self, record: FileRecord) -> FileRecord:
         return self.records.setdefault((record.entity, record.sha256), record)
