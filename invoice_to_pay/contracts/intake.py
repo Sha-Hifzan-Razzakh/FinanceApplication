@@ -9,6 +9,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from invoice_to_pay.contracts.common import EntityId
 
 Channel = Literal["email", "portal", "scan"]
+MimeType = Literal["application/pdf", "image/png", "image/jpeg", "image/tiff"]
+MAX_UPLOAD_BYTES = 20_000_000
+"""Largest file the program accepts; FileRecord.size_bytes and the upload route share it."""
 
 
 class FileRecord(BaseModel):
@@ -22,8 +25,8 @@ class FileRecord(BaseModel):
     channel: Channel = Field(description="Where it came from")
     sender: str | None = Field(default=None, description="Email sender or portal name")
     object_key: str = Field(description="Key in object storage; starts with entity/")
-    mime_type: Literal["application/pdf", "image/png", "image/jpeg", "image/tiff"]
-    size_bytes: int = Field(gt=0, le=20_000_000)
+    mime_type: MimeType
+    size_bytes: int = Field(gt=0, le=MAX_UPLOAD_BYTES)
     untrusted_text_id: UUID | None = Field(
         default=None, description="Email body / transcript stored as untrusted text"
     )
@@ -46,3 +49,11 @@ class UploadMeta(BaseModel):
     channel: Channel
     sender: str | None = None
     untrusted_text_id: UUID | None = None
+
+
+class UploadResponse(BaseModel):
+    """Result of POST /invoices/upload."""
+
+    file_id: UUID
+    run_id: UUID | None = Field(default=None, description="Set when a run started")
+    duplicate: bool = Field(default=False, description="True if the hash was already stored")

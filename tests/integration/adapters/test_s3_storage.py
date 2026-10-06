@@ -24,7 +24,7 @@ async def storage() -> AsyncIterator[S3Storage]:
     bucket = f"itp-test-{uuid4().hex[:12]}"
     async with session.client("s3", endpoint_url=ENDPOINT) as s3:
         await s3.create_bucket(Bucket=bucket)
-    yield S3Storage(session=session, bucket=bucket, endpoint_url=ENDPOINT)
+    yield S3Storage(bucket=bucket, session=session, endpoint_url=ENDPOINT)
 
 
 async def test_cs017_put_get_round_trip(storage: S3Storage) -> None:

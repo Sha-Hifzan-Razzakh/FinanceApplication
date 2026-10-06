@@ -94,3 +94,18 @@ def test_uuid7_is_version_7_and_time_ordered() -> None:
     assert all(u.variant == "specified in RFC 4122" for u in ids)
     assert ids == sorted(ids)
     assert len(set(ids)) == 50
+
+
+def test_upload_response_defaults() -> None:
+    from invoice_to_pay.contracts.intake import UploadResponse
+
+    r = UploadResponse(file_id=uuid4())
+    assert r.run_id is None
+    assert r.duplicate is False
+
+
+def test_file_record_size_limit_is_the_upload_limit() -> None:
+    from invoice_to_pay.contracts.intake import MAX_UPLOAD_BYTES
+
+    assert MAX_UPLOAD_BYTES == 20_000_000
+    _record(size_bytes=MAX_UPLOAD_BYTES)

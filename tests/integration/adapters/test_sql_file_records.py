@@ -63,3 +63,14 @@ async def test_hash_lookup_is_scoped_to_the_entity(
     projects = await store.insert(_record("meridian-projects", sha))
     assert projects.entity == "meridian-projects"
     assert await store.get_by_hash("meridian-supply", sha) != projects
+
+
+async def test_get_by_id_is_scoped_to_the_entity(
+    sessions: async_sessionmaker,  # type: ignore[type-arg]
+    sha: str,
+) -> None:
+    store = SqlFileRecordStore(sessions)
+    record = await store.insert(_record("meridian-supply", sha))
+    assert await store.get("meridian-supply", record.id) == record
+    assert await store.get("meridian-projects", record.id) is None
+    assert await store.get("meridian-supply", uuid7()) is None

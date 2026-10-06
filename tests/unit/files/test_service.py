@@ -139,3 +139,17 @@ async def test_cs018_unsupported_or_empty_file_is_refused_before_storing(
         await service.put(data, SCAN, SUPPLY)
     assert storage.objects == {}
     assert events.events == []
+
+
+async def test_get_returns_own_entity_record_only(service: FileService) -> None:
+    record, _ = await service.put(PDF, SCAN, SUPPLY)
+    assert await service.get(record.id, SUPPLY) == record
+    assert await service.get(record.id, PROJECTS) is None
+
+
+def test_sniff_mime_reads_the_bytes() -> None:
+    from invoice_to_pay.files.service import sniff_mime
+
+    assert sniff_mime(PDF) == "application/pdf"
+    assert sniff_mime(PNG) == "image/png"
+    assert sniff_mime(TEXT) == "text/plain"

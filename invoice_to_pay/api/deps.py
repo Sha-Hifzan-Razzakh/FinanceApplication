@@ -4,13 +4,14 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 
 from invoice_to_pay.application.context import current_principal
 from invoice_to_pay.config.settings import Settings, get_settings
 from invoice_to_pay.contracts.common import Principal
+from invoice_to_pay.files.service import FileService
 
 # tokenUrl only feeds the OpenAPI docs; tokens are issued by the identity provider.
 oauth2 = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
@@ -71,3 +72,9 @@ def require_role(*roles: str) -> Callable[[Principal], Awaitable[Principal]]:
         return principal
 
     return _check
+
+
+def get_file_service(request: Request) -> FileService:
+    """The FileService built in lifespan."""
+    service: FileService = request.app.state.file_service
+    return service
