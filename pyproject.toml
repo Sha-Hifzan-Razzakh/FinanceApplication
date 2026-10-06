@@ -11,12 +11,15 @@ dependencies = [
     "arq>=0.28.0",
     "asyncpg>=0.31.0",
     "fastapi[standard]>=0.115",
+    "llama-index-core>=0.14.25",
+    "llama-index-readers-file>=0.7.0",
     "opentelemetry-exporter-otlp>=1.45.0",
     "opentelemetry-instrumentation-fastapi>=0.66b0",
     "opentelemetry-sdk>=1.45.0",
     "pydantic>=2,<3",
     "pydantic-settings>=2,<3",
     "pyjwt[crypto]>=2.8",
+    "pypdf>=6.19.0",
     "python-magic>=0.4.27",
     "sqlalchemy[asyncio]>=2,<3",
     "structlog>=26.1.0",
@@ -195,4 +198,26 @@ source_modules = [
     "invoice_to_pay.adapters.sql_runs",
 ]
 forbidden_modules = ["arq", "redis"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "LlamaIndex and pypdf only in adapters/llamaindex_reader.py"
+type = "forbidden"
+source_modules = [
+    "invoice_to_pay.main",
+    "invoice_to_pay.api",
+    "invoice_to_pay.application",
+    "invoice_to_pay.config",
+    "invoice_to_pay.contracts",
+    "invoice_to_pay.control",
+    "invoice_to_pay.domain",
+    "invoice_to_pay.files",
+    "invoice_to_pay.observability",
+    "invoice_to_pay.workers",
+    "invoice_to_pay.adapters.s3_storage",
+    "invoice_to_pay.adapters.sql_file_records",
+    "invoice_to_pay.adapters.sql_runs",
+    "invoice_to_pay.adapters.arq_events",
+]
+forbidden_modules = ["llama_index", "pypdf"]
 allow_indirect_imports = true

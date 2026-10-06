@@ -12,7 +12,7 @@ Implement exactly as written. Changes start in spec/itp_data.py.
 | M-05 | UploadResponse | `contracts/intake.py` | API response | T-107 |
 | M-59 | UploadMeta | `contracts/intake.py` | Service input | T-106 |
 | M-06 | InvoiceLine | `contracts/invoice.py` | Document value | T-112 |
-| M-07 | InvoiceDraft | `contracts/invoice.py` | LLM output schema | T-111 |
+| M-07 | InvoiceDraft | `contracts/invoice.py` | LLM output schema | T-112 |
 | M-08 | Invoice | `contracts/invoice.py` | Domain document | T-112 |
 | M-09 | DocumentClassification | `contracts/decisions.py` | Decision schema (Jev) | T-109 |
 | M-10 | Vendor | `contracts/erp.py` | Tool output (ERP mirror) | T-201 |

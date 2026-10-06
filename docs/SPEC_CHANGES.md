@@ -42,3 +42,18 @@ Append before `make docs`. Format: `### SC-NNN — YYYY-MM-DD` then bullets What
 - What changed: CS-020/CS-021 signatures take their dependencies; ports RunStore and LedgerWriter; new CS-113–CS-116; Persistence runs lists the status and terminal values and UNIQUE(thread_id).
 - Why: DR-011, DR-012
 - Tasks affected: T-108
+
+### SC-009 — 2026-10-06
+- What changed: M-07 InvoiceDraft "Defined in" T-111 → T-112.
+- Why: DR-014
+- Tasks affected: T-111, T-112
+
+### SC-010 — 2026-10-06
+- What changed: CS-023 JevDecisions T-109 → T-204; CS-024 intent T-109 → T-208; new CS-117 route_classification (domain/classification.py) in T-109.
+- Why: DR-015, DR-016
+- Tasks affected: T-109, T-204, T-208
+
+### SC-011 — 2026-10-06
+- What changed: CS-025 read_pdf takes storage as a keyword argument and states its Document shape; new CS-118 blocks_from_pages (domain/layout.py); Stack row and Framework Rules row for pypdf.
+- Why: DR-017
+- Tasks affected: T-110, T-111
