@@ -116,3 +116,44 @@ def test_cs001_agent_subject_default_and_override(
     assert Settings().agent_subject == "agent:invoice-to-pay"  # type: ignore[call-arg]
     monkeypatch.setenv("ITP_AGENT_SUBJECT", "agent:staging")
     assert Settings().agent_subject == "agent:staging"  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("key", ["ITP_LLM_EXTRACT_MODEL", "ITP_LLM_REASON_MODEL"])
+@pytest.mark.parametrize(
+    "value", ["anthropic:claude-sonnet-5-5", "openai:gpt-test", "deepseek:deepseek-test"]
+)
+def test_cs001_llm_roles_accept_provider_model_ids(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch, key: str, value: str
+) -> None:
+    monkeypatch.setenv(key, value)
+    settings = Settings()  # type: ignore[call-arg]
+    assert value in {settings.llm_extract_model, settings.llm_reason_model}
+
+
+@pytest.mark.parametrize("key", ["ITP_LLM_EXTRACT_MODEL", "ITP_LLM_REASON_MODEL"])
+@pytest.mark.parametrize(
+    "value", ["claude-sonnet-5-5", "mistral:large", "anthropic:", ":model", "openai:gpt:4"]
+)
+def test_cs001_llm_roles_refuse_ids_without_a_known_provider(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch, key: str, value: str
+) -> None:
+    monkeypatch.setenv(key, value)
+    with pytest.raises(ValidationError, match="provider:model"):
+        Settings()  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("value", ["anthropic:claude-latest", "openai:gpt-latest"])
+def test_cs001_llm_roles_refuse_floating_latest_aliases(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("ITP_LLM_EXTRACT_MODEL", value)
+    with pytest.raises(ValidationError, match="latest"):
+        Settings()  # type: ignore[call-arg]
+
+
+def test_cs001_embedding_model_must_be_an_openai_id(
+    settings_env: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ITP_EMBEDDING_MODEL", "anthropic:something")
+    with pytest.raises(ValidationError, match="openai"):
+        Settings()  # type: ignore[call-arg]

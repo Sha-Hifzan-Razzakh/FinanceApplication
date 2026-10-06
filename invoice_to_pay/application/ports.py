@@ -1,6 +1,6 @@
 """Ports: the Protocols the application depends on; adapters implement them."""
 
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -62,6 +62,47 @@ class DecisionPort(Protocol):
     async def decide[T: BaseModel](self, schema: type[T], payload: str) -> T:
         """Answer the typed question that schema describes about payload."""
         ...
+
+
+class StructuredOutputError(ValueError):
+    """The model's reply could not be read into the requested schema."""
+
+
+class LLMPort(Protocol):
+    """The only way the app reaches a language model."""
+
+    async def structured[T: BaseModel](
+        self, prompt_id: str, vars: Mapping[str, Any], schema: type[T]
+    ) -> T:
+        """Fill prompt_id with vars and return the model's reply as schema.
+
+        Raises StructuredOutputError when the reply does not fit schema.
+        """
+        ...
+
+    def prompt_version(self, prompt_id: str) -> str:
+        """The version of prompt_id that structured() uses; recorded in the ledger."""
+        ...
+
+    # TODO(T-305): chat_with_tools once a task defines ToolCall (DEBT-012)
+
+
+class DocumentLike(Protocol):
+    """What the application reads from a document block: its text and metadata."""
+
+    @property
+    def text(self) -> str:
+        """The block's text."""
+        ...
+
+    @property
+    def metadata(self) -> Mapping[str, Any]:
+        """file_id, pages (1-based) and kind ('text' or 'table')."""
+        ...
+
+
+ReadDocuments = Callable[[FileRecord], Awaitable[Sequence[DocumentLike]]]
+"""Layout-aware blocks of a stored file, in reading order (adapters.llamaindex_reader.read_pdf)."""
 
 
 class RunStore(Protocol):

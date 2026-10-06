@@ -7,23 +7,6 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 - Branch: —
 - Since: —
 
-## INC-1 · Walking skeleton
-| Task | Title | Group | Depends on | Status | Branch / PR | Updated | Notes |
-|---|---|---|---|---|---|---|---|
-| T-101 | Project skeleton and settings | G-01 | — | done | #1 (merged) | 2026-10-06 |  |
-| T-102 | Principal and entity dependency | G-01 | T-101 | done | #2 | 2026-10-06 |  |
-| T-103 | Common contracts | G-01 | T-101 | done | #3 | 2026-10-06 |  |
-| T-104 | Run ledger | G-01 | T-101 | done | #4 | 2026-10-06 |  |
-| T-105 | Tracing | G-01 | T-101 | done | #5 | 2026-10-06 |  |
-| T-106 | File service and storage port | G-02 | T-103 | done | #6 | 2026-10-06 |  |
-| T-107 | Upload route | G-02 | T-102, T-106 | done | #7 | 2026-10-06 |  |
-| T-108 | Intake job handler | G-02 | T-106 | done | #8 | 2026-10-06 |  |
-| T-109 | Document classification | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
-| T-110 | PDF reading | G-03 | T-106 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
-| T-111 | Invoice extraction | G-04 | T-110, T-112 | todo |  |  |  |
-| T-112 | Invoice contracts and validators | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
-| T-113 | Extraction test set | G-04 | T-111 | todo |  |  |  |
-
 ## INC-2 · Clean invoices post themselves
 | Task | Title | Group | Depends on | Status | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|---|
@@ -88,36 +71,3 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 | T-605 | Release gate | G-16 | T-601, T-602, T-603 | todo |  |  |  |
 
 ## Completion records
-### T-101 · Project skeleton and settings · done 2026-10-06 · #1 (merged)
-- Evidence: App boots with settings validated; missing ITP_DATABASE_URL fails at startup (test_cs003_create_app_fails_fast_without_required_settings)
-- Tests: unit: tests/unit/config, tests/unit/test_main.py
-### T-102 · Principal and entity dependency · done 2026-10-06 · #2
-- Evidence: No token/entity -> 401; meridian-supply token reading a meridian-projects record -> 404 (test_cs006_token_for_entity_a_cannot_read_entity_b, test_cs006_tampered_entity_is_401)
-- Tests: unit: tests/unit/api/test_deps.py
-### T-103 · Common contracts · done 2026-10-06 · #3
-- Evidence: Fact rejects unknown source; Quote rejects page < 1 (test_cs009_fact_rejects_unknown_source, test_cs009_quote_rejects_page_below_one)
-- Tests: unit: tests/unit/contracts/test_common.py
-### T-104 · Run ledger · done 2026-10-06 · #4
-- Evidence: Editing any row (body, kind, at, trace_id, delete) makes verify_chain False on Postgres (test_cs013_editing_any_row_fails_verification)
-- Tests: TS-03; integration: tests/integration/control/test_ledger.py
-### T-105 · Tracing · done 2026-10-06 · #5
-- Evidence: Upload request span, run span and node span share one trace id (test_done_when_upload_to_finish_shares_one_trace)
-- Tests: unit: tests/unit/observability; integration: test_ledger_trace.py
-### T-106 · File service and storage port · done 2026-10-06 · #6
-- Evidence: Same PDF twice -> one FileRecord, duplicate=True second time; UNIQUE(entity, sha256) on Postgres
-- Tests: TS-04; integration: test_sql_file_records.py, test_s3_storage.py (moto)
-### T-107 · Upload route · done 2026-10-06 · #7
-- Evidence: Oversized upload -> 413, non-PDF/image bytes -> 415 (test_cs019_oversized_upload_is_413, test_cs019_non_pdf_or_image_is_415); e2e via make dev
-- Tests: unit: tests/unit/api/test_intake.py
-### T-108 · Intake job handler · done 2026-10-06 · #8
-- Evidence: Original + duplicate + redelivered job -> one run row on Redis/Arq/Postgres (test_done_when_redelivered_and_duplicate_jobs_start_one_run)
-- Tests: unit: tests/unit/workers; integration: tests/integration/workers
-### T-112 · Invoice contracts and validators · done 2026-10-06
-- Evidence: Lines not summing to subtotal, or subtotal + VAT != total, raise ValueError (test_ts01_invoice_totals_must_add_up, test_cs030_subtotal_plus_vat_must_equal_total)
-- Tests: TS-01; unit: tests/unit/contracts/test_invoice.py (45)
-### T-109 · Document classification · done 2026-10-06
-- Evidence: Non-invoice types never route to extraction and low confidence routes to hold (test_done_when_non_invoices_never_reach_extraction, test_done_when_low_type_confidence_goes_to_a_person); CS-023 moved to T-204 and CS-024 to T-208 (DR-015)
-- Tests: unit: tests/unit/domain/test_classification.py, tests/unit/contracts/test_decisions.py, tests/unit/application/test_decision_port.py (31)
-### T-110 · PDF reading · done 2026-10-06
-- Evidence: A two-page line-item table comes back as one table with page numbers (test_done_when_a_two_page_line_item_table_is_one_table_with_page_numbers on generated PDFs; test_done_when_a_two_page_table_comes_back_as_one_table_with_page_numbers in the layout module)
-- Tests: unit: tests/unit/domain/test_layout.py, tests/unit/adapters/test_llamaindex_reader.py (26)

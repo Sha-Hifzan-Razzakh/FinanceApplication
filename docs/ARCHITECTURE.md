@@ -40,6 +40,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 | CS-092 | T-407 | `application/ports.py` | port | MemoryPort | Supplier memory behind a port |
 | CS-109 | T-106 | `application/ports.py` | port | FileRecordStore / EventPublisher | Persist FileRecords; hand events to their transport |
 | CS-113 | T-108 | `application/ports.py` | port | RunStore / LedgerWriter | Run rows and ledger appends behind ports |
+| CS-119 | T-111 | `application/use_cases/extract_invoice.py` | use case | extract_invoice | read_pdf blocks → LLM InvoiceDraft → Invoice; one retry with the errors fed back; else held for review |
 
 ### contracts
 | ID | Task | Module | Kind | Name | Responsibility |
@@ -108,7 +109,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 | ID | Task | Module | Kind | Name | Responsibility |
 |---|---|---|---|---|---|
 | CS-024 | T-208 | `agents/nodes/intent.py` | graph node | intent | Classify document; compile GoalSpec; reject non-invoices; pre-flight predicates |
-| CS-029 | T-111 | `agents/nodes/read.py` | graph node | read_invoice | read_pdf → LLM InvoiceDraft → Invoice; one retry with errors; else Held for review |
+| CS-029 | T-208 | `agents/nodes/read.py` | graph node | read_invoice | Wrap extract_invoice (CS-119): store Fact[Invoice] and the prompt ids, or Held for review |
 | CS-042 | T-203 | `agents/nodes/validate.py` | graph node | validate | Fetch vendor and history; call validate_invoice; route ok / held / rejected |
 | CS-044 | T-205 | `agents/nodes/map_lines.py` | graph node | map_lines | Jev maps each line to a PO SKU; below threshold leaves sku None |
 | CS-046 | T-206 | `agents/nodes/match.py` | graph node | match | Fetch PO/receipts; call three_way_match; 'wait' if receipt not yet booked |

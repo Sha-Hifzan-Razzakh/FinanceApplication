@@ -2,10 +2,20 @@
 
 from decimal import Decimal
 from functools import lru_cache
-from typing import Self
+from typing import Final, Self
 
 from pydantic import Field, HttpUrl, PostgresDsn, RedisDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+LLM_PROVIDERS: Final = ("anthropic", "openai", "deepseek")
+
+
+def _provider_and_model(value: str) -> tuple[str, str]:
+    """Split a 'provider:model' id; the model part may not be empty or contain ':'."""
+    provider, _, model = value.partition(":")
+    if provider not in LLM_PROVIDERS or not model or ":" in model:
+        raise ValueError(f"model id must be provider:model with provider in {LLM_PROVIDERS}")
+    return provider, model
 
 
 class Settings(BaseSettings):
@@ -19,8 +29,8 @@ class Settings(BaseSettings):
     vault_url: HttpUrl
     erp_mcp_url: HttpUrl
     mail_mcp_url: HttpUrl
-    llm_extract_model: str = Field(description="Pinned id")
-    llm_reason_model: str = Field(description="Pinned id")
+    llm_extract_model: str = Field(description="Pinned provider:model id")
+    llm_reason_model: str = Field(description="Pinned provider:model id")
     jev_model: str = Field(description="Pinned version")
     embedding_model: str = Field(description="Pinned; stored with every vector")
     post_alone_max_aed: Decimal = Field(default=Decimal("25000"), gt=0)
@@ -44,6 +54,24 @@ class Settings(BaseSettings):
         """Refuse the floating 'jev-latest' alias; decisions must be reproducible."""
         if value == "jev-latest":
             raise ValueError("jev_model must be a pinned version, not 'jev-latest'")
+        return value
+
+    @field_validator("llm_extract_model", "llm_reason_model")
+    @classmethod
+    def _llm_role_pinned(cls, value: str) -> str:
+        """Roles are provider:model ids, never a floating 'latest' alias."""
+        _, model = _provider_and_model(value)
+        if model == "latest" or model.endswith("-latest"):
+            raise ValueError("model id must be pinned, not a 'latest' alias")
+        return value
+
+    @field_validator("embedding_model")
+    @classmethod
+    def _embedding_from_openai(cls, value: str) -> str:
+        """Embeddings come from OpenAI (DR-018)."""
+        provider, _ = _provider_and_model(value)
+        if provider != "openai":
+            raise ValueError("embedding_model must be an openai:model id")
         return value
 
     @field_validator("auth_public_key")

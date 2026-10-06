@@ -31,7 +31,7 @@ def exporter_for(settings: Settings) -> SpanExporter | None:
 
 
 def setup_tracing(settings: Settings) -> TracerProvider:
-    """OTLP exporter, resource attributes, LangChain callback bridge."""
+    """OTLP exporter and resource attributes; model spans come from adapters/langchain_llm.py."""
     global _provider
     if _provider is not None:
         return _provider
@@ -40,7 +40,6 @@ def setup_tracing(settings: Settings) -> TracerProvider:
     if exporter is not None:
         provider.add_span_processor(BatchSpanProcessor(exporter))
     trace.set_tracer_provider(provider)
-    # TODO(T-111): LangChain callback bridge, inside adapters/langchain_llm.py (Framework Rules).
     _provider = provider
     return provider
 
