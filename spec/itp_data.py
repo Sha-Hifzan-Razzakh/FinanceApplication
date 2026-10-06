@@ -285,7 +285,7 @@ MODELS = [
     ("M-59", "UploadMeta", "contracts/intake.py", "Service input", "What the caller knows about an incoming file; the entity comes from the Principal", "BaseModel", "frozen=True, extra='forbid'", "—", "T-106"),
     # invoice
     ("M-06", "InvoiceLine", "contracts/invoice.py", "Document value", "One invoice line with its source quote", "BaseModel", "extra='forbid'", "amount == quantity × unit_price (±0.01)", "T-112"),
-    ("M-07", "InvoiceDraft", "contracts/invoice.py", "LLM output schema", "What the model fills; loose, quoted, not yet trusted", "BaseModel", "extra='forbid'", "every non-null field has an entry in field_quotes", "T-111"),
+    ("M-07", "InvoiceDraft", "contracts/invoice.py", "LLM output schema", "What the model fills; loose, quoted, not yet trusted", "BaseModel", "extra='forbid'", "every non-null field has an entry in field_quotes", "T-112"),
     ("M-08", "Invoice", "contracts/invoice.py", "Domain document", "The validated invoice the run works on", "BaseModel", "extra='forbid', frozen=True", "adds_up: Σlines = subtotal; subtotal + vat = total; due_on ≥ issued_on", "T-112"),
     ("M-09", "DocumentClassification", "contracts/decisions.py", "Decision schema (Jev)", "Document type and readability, typed", "BaseModel", "—", "probabilities in [0,1]", "T-109"),
     # erp
@@ -443,8 +443,8 @@ CODE = [
     ("CS-021", "T-108", "application/use_cases/settle_invoice.py", "application", "use case", "start_settle_run", "async def start_settle_run(file: FileRecord, p: Principal, *, runs: RunStore, ledger: LedgerWriter) -> UUID", "Create run row, ledger open, invoke run_graph with thread_id", "LangGraph ainvoke(config={'thread_id': ...})", "FileRecord, Principal", "", "Received"),
     # ---- T-109 classification
     ("CS-022", "T-109", "application/ports.py", "application", "port", "DecisionPort", "class DecisionPort(Protocol): async def decide(self, schema: type[T], payload: str) -> T", "Typed decisions without text generation", "typing.Protocol", "", "", "—"),
-    ("CS-023", "T-109", "adapters/jev_decisions.py", "adapters", "adapter", "JevDecisions", "class JevDecisions(DecisionPort)", "Translate a Pydantic decision schema into Jev typed questions; pinned model", "Jev choice / probability questions (HTTP API)", "", "DocumentClassification, DuplicateScores, LineMapping, ScopeDecision, QueryClassification", "Decision"),
-    ("CS-024", "T-109", "agents/nodes/intent.py", "agents", "graph node", "intent", "async def intent(state: InvoiceRunState) -> dict", "Classify document; compile GoalSpec; reject non-invoices; pre-flight predicates", "LangGraph node", "FileRecord", "DocumentClassification, GoalSpec", "Intent, Termination"),
+    ("CS-023", "T-204", "adapters/jev_decisions.py", "adapters", "adapter", "JevDecisions", "class JevDecisions(DecisionPort)", "Translate a Pydantic decision schema into Jev typed questions; pinned model", "Jev choice / probability questions (HTTP API)", "", "DocumentClassification, DuplicateScores, LineMapping, ScopeDecision, QueryClassification", "Decision"),
+    ("CS-024", "T-208", "agents/nodes/intent.py", "agents", "graph node", "intent", "async def intent(state: InvoiceRunState) -> dict", "Classify document; compile GoalSpec; reject non-invoices; pre-flight predicates", "LangGraph node", "FileRecord", "DocumentClassification, GoalSpec", "Intent, Termination"),
     # ---- T-110 reading
     ("CS-025", "T-110", "adapters/llamaindex_reader.py", "adapters", "adapter", "read_pdf", "async def read_pdf(file: FileRecord) -> list[Document]", "Layout-aware text with page numbers; tables kept whole", "LlamaIndex PDF reader / layout parser, Document", "FileRecord", "", "Perception"),
     # ---- T-111 extraction
@@ -563,6 +563,7 @@ CODE = [
     ("CS-114", "T-108", "adapters/sql_runs.py", "adapters", "adapter", "SqlRunStore", "class SqlRunStore(RunStore)", "runs on Postgres; one run per thread_id", "SQLAlchemy async, postgresql insert on_conflict_do_nothing", "", "", "Received"),
     ("CS-115", "T-108", "adapters/arq_events.py", "adapters", "adapter", "ArqEventPublisher", "class ArqEventPublisher(EventPublisher)", "Enqueue InvoiceReceived with the caller's trace context", "Arq enqueue_job", "InvoiceReceived", "", "Received"),
     ("CS-116", "T-108", "workers/settings.py", "workers", "config", "WorkerSettings", "class WorkerSettings", "Arq worker: functions, startup (DB pool, IntakeDeps), shutdown", "Arq WorkerSettings", "Settings", "", "—"),
+    ("CS-117", "T-109", "domain/classification.py", "domain", "function", "route_classification", "def route_classification(c: DocumentClassification, *, min_confidence: float) -> Literal['extract', 'reject', 'hold']", "Hold what is unclear or illegible, reject what is not an invoice, extract the rest", "—", "DocumentClassification", "", "Intent, Termination"),
     ("CS-105", "T-603", "tests/e2e/test_approval_console.py", "tests", "test module", "test_approve_decline_expired", "def test_approve_decline_expired(page)", "Approval console paths with page objects", "Playwright pytest-playwright, expect", "", "", "—"),
     ("CS-106", "T-604", "observability/metrics.py", "observability", "module", "metrics", "runs_total{terminal}, exceptions_total{kind}, cost_per_invoice, time_to_post", "Business and cost metrics", "OpenTelemetry metrics API", "", "", "—"),
     ("CS-107", "T-605", ".github/workflows/release-gate.yml", "evals", "config", "release-gate", "jobs: unit, scenarios, deepeval, ragas, promptfoo, e2e", "Block merge on any red suite", "GitHub Actions", "", "", "—"),

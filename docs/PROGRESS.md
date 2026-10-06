@@ -3,9 +3,9 @@
 Edited only by `python3 scripts/progress.py` (start · done · block · archive). Do not read or rewrite by hand.
 
 ## Current focus
-- Group: none
-- Branch: —
-- Since: —
+- Group: G-03
+- Branch: g03-invoice-contracts-and-reading
+- Since: 2026-10-06
 
 ## INC-1 · Walking skeleton
 | Task | Title | Group | Depends on | Status | Branch / PR | Updated | Notes |
@@ -18,10 +18,10 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 | T-106 | File service and storage port | G-02 | T-103 | done | #6 | 2026-10-06 |  |
 | T-107 | Upload route | G-02 | T-102, T-106 | done | #7 | 2026-10-06 |  |
 | T-108 | Intake job handler | G-02 | T-106 | done | #8 | 2026-10-06 |  |
-| T-109 | Document classification | G-03 | T-103 | todo |  |  |  |
-| T-110 | PDF reading | G-03 | T-106 | todo |  |  |  |
+| T-109 | Document classification | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
+| T-110 | PDF reading | G-03 | T-106 | in progress | g03-invoice-contracts-and-reading | 2026-10-06 |  |
 | T-111 | Invoice extraction | G-04 | T-110, T-112 | todo |  |  |  |
-| T-112 | Invoice contracts and validators | G-03 | T-103 | todo |  |  |  |
+| T-112 | Invoice contracts and validators | G-03 | T-103 | done | g03-invoice-contracts-and-reading | 2026-10-06 |  |
 | T-113 | Extraction test set | G-04 | T-111 | todo |  |  |  |
 
 ## INC-2 · Clean invoices post themselves
@@ -112,3 +112,9 @@ Edited only by `python3 scripts/progress.py` (start · done · block · archive)
 ### T-108 · Intake job handler · done 2026-10-06 · #8
 - Evidence: Original + duplicate + redelivered job -> one run row on Redis/Arq/Postgres (test_done_when_redelivered_and_duplicate_jobs_start_one_run)
 - Tests: unit: tests/unit/workers; integration: tests/integration/workers
+### T-112 · Invoice contracts and validators · done 2026-10-06
+- Evidence: Lines not summing to subtotal, or subtotal + VAT != total, raise ValueError (test_ts01_invoice_totals_must_add_up, test_cs030_subtotal_plus_vat_must_equal_total)
+- Tests: TS-01; unit: tests/unit/contracts/test_invoice.py (45)
+### T-109 · Document classification · done 2026-10-06
+- Evidence: Non-invoice types never route to extraction and low confidence routes to hold (test_done_when_non_invoices_never_reach_extraction, test_done_when_low_type_confidence_goes_to_a_person); CS-023 moved to T-204 and CS-024 to T-208 (DR-015)
+- Tests: unit: tests/unit/domain/test_classification.py, tests/unit/contracts/test_decisions.py, tests/unit/application/test_decision_port.py (31)

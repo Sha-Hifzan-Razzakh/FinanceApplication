@@ -82,7 +82,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 | ID | Task | Module | Kind | Name | Responsibility |
 |---|---|---|---|---|---|
 | CS-017 | T-106 | `adapters/s3_storage.py` | adapter | S3Storage | Object storage implementation with entity-prefixed keys |
-| CS-023 | T-109 | `adapters/jev_decisions.py` | adapter | JevDecisions | Translate a Pydantic decision schema into Jev typed questions; pinned model |
+| CS-023 | T-204 | `adapters/jev_decisions.py` | adapter | JevDecisions | Translate a Pydantic decision schema into Jev typed questions; pinned model |
 | CS-025 | T-110 | `adapters/llamaindex_reader.py` | adapter | read_pdf | Layout-aware text with page numbers; tables kept whole |
 | CS-027 | T-111 | `adapters/langchain_llm.py` | adapter | LangChainLLM | init_chat_model per role; with_structured_output; usage → budget meter; OpenTelemetry callback bridge |
 | CS-039 | T-202 | `adapters/erp_mcp_client.py` | adapter | ErpMcpClient | ClientSession.call_tool; validate structured result into output models |
@@ -107,7 +107,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 ### agents
 | ID | Task | Module | Kind | Name | Responsibility |
 |---|---|---|---|---|---|
-| CS-024 | T-109 | `agents/nodes/intent.py` | graph node | intent | Classify document; compile GoalSpec; reject non-invoices; pre-flight predicates |
+| CS-024 | T-208 | `agents/nodes/intent.py` | graph node | intent | Classify document; compile GoalSpec; reject non-invoices; pre-flight predicates |
 | CS-029 | T-111 | `agents/nodes/read.py` | graph node | read_invoice | read_pdf → LLM InvoiceDraft → Invoice; one retry with errors; else Held for review |
 | CS-042 | T-203 | `agents/nodes/validate.py` | graph node | validate | Fetch vendor and history; call validate_invoice; route ok / held / rejected |
 | CS-044 | T-205 | `agents/nodes/map_lines.py` | graph node | map_lines | Jev maps each line to a PO SKU; below threshold leaves sku None |
@@ -164,6 +164,7 @@ Hexagonal: `domain/` and `application/` import no framework; each framework sits
 | CS-070 | T-301 | `domain/autonomy.py` | function | approvals_needed | The autonomy matrix as code |
 | CS-078 | T-305 | `domain/evidence.py` | function | collect_evidence | PO lines, receipts, observations as Evidence; memory marked inadmissible |
 | CS-102 | T-506 | `domain/supplier_scope.py` | function | facts_for_supplier | Drop any fact not belonging to the asking supplier |
+| CS-117 | T-109 | `domain/classification.py` | function | route_classification | Hold what is unclear or illegible, reject what is not an invoice, extract the rest |
 
 ### tests
 | ID | Task | Module | Kind | Name | Responsibility |

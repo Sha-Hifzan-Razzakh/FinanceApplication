@@ -111,3 +111,23 @@ Record format: `### DR-NNN — YYYY-MM-DD — <title>` then bullets Closes · Co
 - Context: G-01/G-02 were built before the session-group workflow arrived, as one stacked branch and PR per task (#1–#8).
 - Decision: keep #2–#8 as they are and record them per task in PROGRESS; from G-03, one branch per group via /next-group.
 - Decided by: Hifzan
+
+### DR-014 — 2026-10-06 — InvoiceDraft is defined in T-112, not T-111
+- Closes: contradiction between M-07 "defined in T-111" and CS-030/CS-031 (T-112), where T-111 depends on T-112
+- Context: T-112 builds contracts/invoice.py with InvoiceLine, InvoiceDraft and Invoice (CS-030) and draft_to_invoice(d: InvoiceDraft, …) (CS-031); InvoiceDraft cannot wait for the later task.
+- Decision: M-07 InvoiceDraft is defined in T-112; T-111 imports it. "Every non-null field has an entry in field_quotes" covers the scalar fields; lines are quoted by InvoiceLine.source. draft_to_invoice raises ValueError (contracts/ cannot import control/); T-111 maps it to ExtractionInvalid.
+- Consequences: SC-009. TS-02 (catalogued under T-111, target CS-031) is covered by the CS-031 tests in T-112 and is re-checked in T-111.
+- Decided by: Claude in G-03 (confirm in review)
+
+### DR-015 — 2026-10-06 — T-109 builds the port, the contract and the routing rule; the Jev adapter and the intent node move
+- Closes: T-109 could not be finished as written (OD-04 open: no Jev request/response shape; CS-024 needs InvoiceRunState and GoalSpec from G-07; the listed "already defined" contracts come from T-204, T-205, T-403, T-504, T-207)
+- Context: asked in the G-03 session; DecisionPort's only real implementation is the Jev adapter or the LLM fallback (needs LLMPort, T-111).
+- Decision: T-109 delivers CS-022 DecisionPort, M-09 DocumentClassification and the pure domain function route_classification (CS-117). CS-023 JevDecisions moves to T-204, the first task that needs a real decision source, unless OD-04 is decided earlier. CS-024 intent moves to T-208 (run graph skeleton), where InvoiceRunState and GoalSpec exist.
+- Consequences: SC-010. DEBT-008, DEBT-009. OD-04 stays open and now blocks T-204.
+- Decided by: Hifzan (build the rule now; port + schema only, adapter after OD-04); Claude (target tasks T-204 and T-208)
+
+### DR-016 — 2026-10-06 — Classification routing rules
+- Closes: T-109 "Done when" (statements and reminders never reach extraction; low confidence goes to a person) had no stated thresholds or outcomes
+- Decision: route_classification(c, min_confidence) returns hold when doc_type_p or readable_p is below min_confidence (inclusive at the threshold), else extract for an invoice and reject for every other type (credit notes belong to another goal type). Callers pass Settings.doc_type_threshold for both probabilities.
+- Consequences: no separate readability setting (Q-006). The rule is a domain function, so the later intent node only wires it.
+- Decided by: Claude in G-03 (confirm in review)
