@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from typing import Any, Protocol
 from uuid import UUID
 
+from pydantic import BaseModel
+
 from invoice_to_pay.contracts.common import EntityId
 from invoice_to_pay.contracts.events import InvoiceReceived
 from invoice_to_pay.contracts.intake import FileRecord
@@ -51,6 +53,14 @@ class EventPublisher(Protocol):
 
     async def publish(self, event: InvoiceReceived) -> None:
         """Publish one event."""
+        ...
+
+
+class DecisionPort(Protocol):
+    """Typed decisions without text generation."""
+
+    async def decide[T: BaseModel](self, schema: type[T], payload: str) -> T:
+        """Answer the typed question that schema describes about payload."""
         ...
 
 
