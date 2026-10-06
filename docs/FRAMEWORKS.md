@@ -1,0 +1,59 @@
+# Frameworks
+<!-- GENERATED from spec/itp_data.py by spec/build_repo_docs.py. Do not edit: change the spec and run `make docs`. -->
+
+## Stack
+| Layer | Component | Package | Minimum line | Purpose | Used by | Docs | Note |
+|---|---|---|---|---|---|---|---|
+| Runtime | Python | python 3.12 | 3.12 | Language runtime | All | docs.python.org/3.12 | 3.12 for typing (PEP 695 generics optional), TaskGroup |
+| Runtime | uv | uv (standalone) | latest | Dependency resolution, lockfile, venv, scripts | T-101 | docs.astral.sh/uv | uv.lock is committed; versions resolved there are the truth |
+| API | FastAPI | fastapi[standard] | 0.115+ | HTTP routes, DI, SSE, uploads | T-101, T-102, T-107, T-302, T-304, T-405 | fastapi.tiangolo.com | Use lifespan, not on_event |
+| Contracts | Pydantic | pydantic | 2.x | Every contract, validation, JSON Schema | All | docs.pydantic.dev | v2 API only: model_config, field_validator, model_validator |
+| Contracts | pydantic-settings | pydantic-settings | 2.x | Typed settings from env | T-101 | docs.pydantic.dev/latest/concepts/pydantic_settings | env_prefix ITP_ |
+| Model I/O | LangChain | langchain, langchain-core, langchain-openai or langchain-anthropic | 1.x | LLM port: structured output, tool binding, usage | T-111, T-305, T-403, T-404, T-505 | docs.langchain.com | Provider package chosen in Open Decisions |
+| Orchestration | LangGraph | langgraph, langgraph-checkpoint-postgres | 1.x | Run graph, subgraphs, interrupt/resume, checkpoints | T-208, T-209, T-213, T-303, T-306, T-403, T-408 | docs.langchain.com/oss/python/langgraph | Nodes re-run from their start on resume: make code before interrupt() idempotent |
+| Knowledge | LlamaIndex | llama-index-core, llama-index-vector-stores-postgres, llama-index-retrievers-bm25, llama-index-readers-file | 0.12+ (core) | PDF reading, contract ingestion, hybrid retrieval | T-110, T-401, T-402 | docs.llamaindex.ai | Split packages; import from llama_index.core |
+| Memory | Mem0 | mem0ai | current | Supplier memory | T-407 | docs.mem0.ai | Calls an LLM internally on add(): count cost, filter PII first |
+| Tools | MCP Python SDK | mcp | 1.x | ERP and mail servers (FastMCP) and clients | T-201, T-202, T-212, T-502, T-505 | modelcontextprotocol.io | Streamable HTTP transport; typed tool returns give structured content |
+| Multi-agent | AutoGen | autogen-agentchat, autogen-ext[openai] | 0.4+ API | Analyst–auditor review team | T-409 | microsoft.github.io/autogen | In maintenance mode since Oct 2025; successor is Microsoft Agent Framework (1.0 GA Apr 2026). Keep it behind review_team only |
+| Decisions | Jev (TypeSafe AI) | HTTP API via httpx (no SDK assumed) | pinned model id, not jev-latest | Typed choice / probability decisions | T-109, T-204, T-205, T-403, T-504 | typesafe.ai | Early access; request/response shape is an open decision |
+| Speech | faster-whisper | faster-whisper | 1.x | Voicemail transcription in a worker | T-503 | github.com/SYSTRAN/faster-whisper | CPU/GPU heavy: never on the API process |
+| Browser | Playwright | playwright, pytest-playwright | 1.4x+ | Portal collector and E2E tests | T-501, T-603 | playwright.dev/python | Run `playwright install chromium` in setup |
+| Evaluation | DeepEval | deepeval | current | Extraction and tool-correctness tests in CI | T-113, T-601 | deepeval.com/docs | Judge-model calls cost money: budget per CI run |
+| Evaluation | Ragas | ragas | 0.2+ API | Grounding metrics for contract answers | T-410 | docs.ragas.io | Uses EvaluationDataset / SingleTurnSample |
+| Evaluation | promptfoo | promptfoo (npm, via npx) | current | Red-team suite against the live endpoint | T-602 | promptfoo.dev/docs | Node 20+ required in CI |
+| Persistence | PostgreSQL + pgvector | postgres 16 with pgvector extension | 16 / pgvector 0.7+ | Records, ledger, checkpoints, vectors | All | github.com/pgvector/pgvector | One database, separate schemas: itp, langgraph, vectors |
+| Persistence | SQLAlchemy + asyncpg + Alembic | sqlalchemy[asyncio], asyncpg, alembic | 2.x | Data access and migrations for your tables | T-104, T-106, T-302 | docs.sqlalchemy.org | Async sessions only |
+| Coordination | Redis | redis (redis-py asyncio) | 5.x | Arq queue, budget counters, idempotency, attempt counters | T-108, T-211, T-212, T-306 | redis.readthedocs.io | Every key has a TTL |
+| Jobs | Arq | arq | current | Intake, transcription, ingestion jobs | T-108, T-503, T-401 | arq-docs.helpmanual.io | Or Celery — see Open Decisions |
+| Files | Object storage | aioboto3 (S3 API; MinIO locally) | current | Original files | T-106 | aioboto3.readthedocs.io | Bucket per environment; key prefix = entity |
+| Files | python-magic | python-magic | current | Content sniffing | T-106 | pypi.org/project/python-magic | Needs libmagic in the image |
+| Secrets | Vault client | hvac (HashiCorp) or azure-keyvault-secrets | current | Credentials at call time | T-202, T-501 | — | Choice in Open Decisions |
+| Observability | OpenTelemetry | opentelemetry-sdk, opentelemetry-exporter-otlp, opentelemetry-instrumentation-fastapi | 1.x | Traces and metrics | T-105, T-604 | opentelemetry.io/docs/languages/python | One trace per run |
+| Observability | structlog | structlog | current | JSON logs with trace_id and run_id | T-105 | structlog.org | No print() |
+| HTTP client | httpx | httpx | 0.27+ | Jev and webhook calls | T-109 | python-httpx.org | Always with timeout |
+| Quality | ruff | ruff | current | Lint and format | All | docs.astral.sh/ruff | ruff check + ruff format in CI |
+| Quality | mypy | mypy (pydantic plugin) | current | Static types, strict on domain/contracts/control | All | mypy.readthedocs.io | strict = true for those packages |
+| Quality | pytest | pytest, pytest-asyncio, pytest-cov | 8.x | Unit, integration, scenario tests | All | docs.pytest.org | asyncio_mode = auto |
+| Quality | import-linter | import-linter (dev) | 2.x | Enforces the Framework Rules import boundaries (make lint) | All | import-linter.readthedocs.io | Contracts live in pyproject.toml [tool.importlinter] |
+| Auth | PyJWT | pyjwt[crypto] | 2.8+ | Bearer-token validation (RS256 against a configured public key) | T-102 | pyjwt.readthedocs.io | Import only in api/deps.py |
+
+Exact versions are in `uv.lock`; record notable upgrades in docs/DECISIONS.md.
+
+## Rules per framework
+| Framework | Import only in | Use for | Never for | APIs | You implement | Gotchas |
+|---|---|---|---|---|---|---|
+| FastAPI | api/, main.py | Routes, dependencies, uploads, SSE | Business rules, DB queries in route bodies | APIRouter, Depends, UploadFile, StreamingResponse, lifespan, exception_handler | get_principal, require_role, error handler, routers | Routes stay thin: parse → call use case → return model. Entity always from get_principal. |
+| Pydantic | contracts/, config/, any layer for models | Every boundary: API, tools, LLM output, events, state | Business logic inside validators beyond invariants | BaseModel, ConfigDict, Field, field_validator, model_validator, TypeAdapter, BaseSettings | All 59 contracts exactly as on the Contracts sheet | Decimal for money (never float). extra='forbid' on inputs. model_dump(mode='json') for JSON. |
+| LangChain | adapters/langchain_llm.py only | Model calls: structured output, tool binding, usage metadata | Orchestration, retrieval pipelines, memory | init_chat_model, ChatPromptTemplate, with_structured_output, bind_tools, AIMessage.usage_metadata | LangChainLLM(LLMPort), PromptRegistry | Never import langchain outside the adapter. Prompts come from PromptRegistry by id+version. |
+| LangGraph | agents/ | Run graph, resolution and answer subgraphs, checkpoints, interrupts | Calling tools directly (use control.act), provider SDKs | StateGraph, START, END, add_conditional_edges, Send, interrupt, Command, AsyncPostgresSaver | Nodes, routing functions, InvoiceRunState | A node resumed after interrupt() re-runs from its first line: keep side effects after the interrupt or idempotent. thread_id = entity:file_id. |
+| LlamaIndex | adapters/llamaindex_*.py only | PDF reading, clause ingestion, hybrid retrieval | Agents, answer generation (LangGraph owns it) | IngestionPipeline, HierarchicalNodeParser, PGVectorStore, QueryFusionRetriever, BM25Retriever, MetadataFilters, BaseRetriever, BaseNodePostprocessor | ContractIngestor, ContractRetriever._retrieve, VersionGuard, AccessRecheck | The entity/access filter goes inside the query, before top-k. Metadata missing → refuse ingestion. |
+| Mem0 | adapters/mem0_memory.py only | Supplier history recall | Evidence for money actions; storing documents | Memory.from_config, add, search, delete | Mem0Memory(MemoryPort), PII filter | user_id = entity:supplier_id from the principal, never from input. Results are Evidence(kind='memory', admissible_for_money=False). |
+| MCP | mcp_servers/ (servers), adapters/*_mcp_client.py (clients) | ERP and mail access across a process boundary | Deciding whether a call is allowed (that is control/) | FastMCP, @mcp.tool, ClientSession, streamablehttp_client, CallToolResult.structuredContent | ERP server tools, mail client, server auth, idempotency store | Tool inputs/outputs are the Contracts models. Write tools honour idempotency_key server-side. |
+| AutoGen | agents/review_team.py only | Analyst–auditor exchange inside one node | The main loop, state, tool calls with side effects | AssistantAgent, RoundRobinGroupChat, MaxMessageTermination | review_team node, prompts | Maintenance mode upstream: keep it isolated so it can be swapped for Microsoft Agent Framework. |
+| Jev | adapters/jev_decisions.py only | Bounded typed decisions: doc type, duplicates, line mapping, scope, query type | Final authorization; anything needing prose | HTTP API (shape TBC), pinned model id | JevDecisions(DecisionPort), thresholds, LLM fallback | Probabilities only: thresholds live in Settings. Log every decision to the ledger. |
+| faster-whisper | adapters/whisper_speech.py, workers/ | Voicemail transcripts | Running in the API process | WhisperModel, transcribe(vad_filter=True, initial_prompt=…) | WhisperTranscriber | Transcripts are untrusted text; supplier comes from caller number. |
+| Playwright | adapters/playwright_portal.py, tests/e2e/ | Portal downloads; E2E tests | Anything an API can do | async_playwright, new_context, locator, expect_download, expect, tracing | PortalCollector, page objects | Fresh context per run; credentials from vault; never commit storage_state files. |
+| DeepEval | evals/deepeval/ | CI tests for extraction and tool sequences | Runtime checks in production code | LLMTestCase, GEval, ToolCorrectnessMetric, assert_test | Test cases, thresholds | Run with `deepeval test run`; judge cost budgeted. |
+| Ragas | evals/ragas/ | Grounding scores for answers | Runtime checks | EvaluationDataset, SingleTurnSample, evaluate, Faithfulness, LLMContextRecall | Golden questions | Pin the judge model in settings. |
+| promptfoo | evals/promptfoo/ | Red-team and regression against POST /runs | Unit tests | promptfooconfig.yaml, http provider, redteam plugins, assertions | Adversarial set, assertions | Point at the real API (local stack), not at a raw model. |
+| OpenTelemetry | observability/, main.py | Traces and metrics | Audit (that is the ledger) | TracerProvider, start_as_current_span, metrics API, FastAPIInstrumentor | setup_tracing, run_span, metrics | Redact payloads; attributes run.id, entity, tool. |

@@ -43,7 +43,7 @@ packages = ["invoice_to_pay"]
 line-length = 100
 target-version = "py312"
 # Generated from the workbook; never hand-edited or reformatted.
-extend-exclude = ["CLAUDE.md", "tasks", "docs"]
+extend-exclude = ["CLAUDE.md", "tasks", "docs", "spec", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "S", "T20", "SIM", "RUF"]

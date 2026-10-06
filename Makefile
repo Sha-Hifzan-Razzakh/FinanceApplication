@@ -2,7 +2,7 @@
 -include .env
 export
 
-.PHONY: setup dev worker erp-mcp lint typecheck test-unit test-int test-scenarios eval redteam e2e migrate gate
+.PHONY: setup dev worker erp-mcp lint typecheck test-unit test-int test-scenarios eval redteam e2e migrate gate docs docs-check progress
 
 setup:
 	uv sync && uv run playwright install chromium && docker compose up -d && uv run alembic upgrade head
@@ -45,3 +45,12 @@ migrate:
 
 gate:
 	$(MAKE) lint typecheck test-unit test-int test-scenarios eval redteam e2e
+
+docs:
+	uv run python spec/build_repo_docs.py --repo .
+
+docs-check:
+	python3 scripts/progress.py check
+
+progress:
+	python3 scripts/progress.py summary

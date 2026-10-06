@@ -4,9 +4,9 @@ An agent that settles supplier invoices for Meridian Supply: intake, reading, va
 three-way match, approval and posting with payment scheduling. Every write it makes is
 admissible, idempotent, verified and auditable.
 
-- **Spec:** `docs/spec/InvoiceToPay_BuildWorkbook.xlsx` (the source of truth)
-- **Working rules for Claude Code:** `CLAUDE.md`
-- **One prompt per build task:** `tasks/T-xxx.md`, taken in increment order (INC-1 … INC-6)
+- **Spec (source of truth):** `spec/itp_data.py`; `make docs` regenerates CLAUDE.md, `docs/`, `tasks/` and `scripts/progress.py` from it
+- **Where to start:** `docs/README.md` (docs map) and `docs/HANDOFF.md`; status via `make progress`
+- **Workbook view of the spec:** `docs/spec/InvoiceToPay_BuildWorkbook.xlsx`
 
 ## Quickstart
 
@@ -21,7 +21,4 @@ make dev                  # http://localhost:8000/health
 
 ## Status
 
-| Increment | Goal | State |
-|---|---|---|
-| INC-1 Walking skeleton | Upload a PDF, get a typed invoice, with ledger and trace | T-101 done; T-102 – T-108 in review |
-| INC-2 … INC-6 | See the Increments sheet | Not started |
+`make progress` prints the current and next session group; `docs/PROGRESS.md` holds per-task status.
