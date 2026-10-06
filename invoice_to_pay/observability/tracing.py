@@ -7,7 +7,7 @@ from typing import Any
 from uuid import UUID
 
 import structlog
-from opentelemetry import trace
+from opentelemetry import context, propagate, trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -55,6 +55,23 @@ def run_span(run_id: UUID) -> Iterator[Span]:
         structlog.contextvars.bound_contextvars(run_id=str(run_id), entity=principal.entity),
     ):
         yield span
+
+
+def inject_trace() -> dict[str, str]:
+    """W3C trace context of the active span, to carry across the job queue."""
+    carrier: dict[str, str] = {}
+    propagate.inject(carrier)
+    return carrier
+
+
+@contextmanager
+def attached_trace(carrier: dict[str, str]) -> Iterator[None]:
+    """Continue the trace a job's publisher carried (no-op for an empty carrier)."""
+    token = context.attach(propagate.extract(carrier))
+    try:
+        yield
+    finally:
+        context.detach(token)
 
 
 def current_trace_id() -> str:

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     auth_issuer: str = Field(description="Expected iss claim of bearer tokens")
     auth_audience: str = Field(description="Expected aud claim of bearer tokens")
     auth_public_key: str = Field(description="PEM public key that verifies RS256 tokens")
+    agent_subject: str = Field(
+        default="agent:invoice-to-pay", description="Principal subject the agent runs as"
+    )
 
     @field_validator("jev_model")
     @classmethod

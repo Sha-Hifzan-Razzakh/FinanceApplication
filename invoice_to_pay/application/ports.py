@@ -1,11 +1,13 @@
 """Ports: the Protocols the application depends on; adapters implement them."""
 
-from typing import Protocol
+from collections.abc import Mapping
+from typing import Any, Protocol
 from uuid import UUID
 
 from invoice_to_pay.contracts.common import EntityId
 from invoice_to_pay.contracts.events import InvoiceReceived
 from invoice_to_pay.contracts.intake import FileRecord
+from invoice_to_pay.contracts.run import LedgerEntry
 
 
 class StoragePort(Protocol):
@@ -52,4 +54,17 @@ class EventPublisher(Protocol):
         ...
 
 
-# TODO(T-108): Arq-backed EventPublisher adapter.
+class RunStore(Protocol):
+    """Run rows: at most one run per thread_id (entity:file_id)."""
+
+    async def start(self, entity: EntityId, thread_id: str, goal_type: str) -> tuple[UUID, bool]:
+        """Create the running run for thread_id, or return the existing one; bool = created."""
+        ...
+
+
+class LedgerWriter(Protocol):
+    """Appends to a run's hash-chained ledger (control.ledger.RunLedger)."""
+
+    async def append(self, run_id: UUID, kind: str, body: Mapping[str, Any]) -> LedgerEntry:
+        """Append one entry and return it."""
+        ...
